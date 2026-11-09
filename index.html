@@ -1,0 +1,1038 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Cevher Hesap Aracı</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: phone-first single column. Home = grouped card grid; module page = inputs panel then live results,
+   splitting into two columns (inputs left, sticky results right) from 760px. Cool graphite neutrals, copper accent. */
+:root{
+  --bg:#EEF0F3; --surface:#FFFFFF; --surface-2:#F5F6F8; --border:#D6DAE1; --border-strong:#B9C0CA;
+  --fg:#1A1F27; --fg-muted:#5B6472;
+  --accent:#B4622D; --accent-strong:#944C1F; --accent-soft:#F7E8DD;
+  --ok:#2E7D4F; --warn:#9A6A12; --warn-soft:#FBF1DC; --bad:#B3362C; --bad-soft:#FBE4E1;
+  --shadow:0 1px 2px rgba(20,25,35,.06),0 6px 18px rgba(20,25,35,.06);
+  --font-display:"Barlow Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --font-body:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --radius:14px; --radius-sm:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121519; --surface:#1B1F25; --surface-2:#232830; --border:#333A45; --border-strong:#4A5362;
+    --fg:#E8EAEE; --fg-muted:#9CA5B1;
+    --accent:#D9895A; --accent-strong:#E8A678; --accent-soft:#3A2A1F;
+    --ok:#5BBF86; --warn:#E0B04A; --warn-soft:#3A3120; --bad:#E57368; --bad-soft:#3E2422;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121519; --surface:#1B1F25; --surface-2:#232830; --border:#333A45; --border-strong:#4A5362;
+  --fg:#E8EAEE; --fg-muted:#9CA5B1;
+  --accent:#D9895A; --accent-strong:#E8A678; --accent-soft:#3A2A1F;
+  --ok:#5BBF86; --warn:#E0B04A; --warn-soft:#3A3120; --bad:#E57368; --bad-soft:#3E2422;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{height:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+a{color:var(--accent-strong)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{text-wrap:balance}
+
+/* Top bar */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--border)}
+.topbar-in{position:relative;max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:6px;min-height:56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand{flex:1;min-width:0;display:flex;align-items:center;gap:10px}
+.brand a{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:.03em;text-transform:uppercase;color:var(--fg);text-decoration:none;white-space:nowrap;line-height:1}
+.brand a span{color:var(--accent)}
+.crumb{font-size:13px;color:var(--fg-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-top:2px}
+.iconbtn{display:inline-flex;align-items:center;justify-content:center;flex:none;width:44px;height:44px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--fg);cursor:pointer;text-decoration:none}
+.iconbtn:hover{background:var(--surface-2)}
+.iconbtn svg{width:22px;height:22px}
+.settings-pop{position:absolute;right:max(16px,env(safe-area-inset-right,0px));top:calc(100% + 6px);width:min(320px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;display:grid;gap:12px;z-index:25}
+.set-row{display:grid;gap:6px}
+.set-row>span{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--fg-muted)}
+
+/* Page frame */
+.page{max-width:1040px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.hero{padding:6px 0 18px;max-width:680px}
+h1{font-family:var(--font-display);font-weight:700;font-size:clamp(30px,6vw,42px);line-height:1.05;letter-spacing:.01em;margin:0 0 8px}
+.lede{margin:0;color:var(--fg-muted);font-size:16px;max-width:60ch}
+.group{margin-top:26px}
+.group-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.group-title{margin:0;font-family:var(--font-display);font-weight:600;font-size:20px;letter-spacing:.05em;text-transform:uppercase;color:var(--fg)}
+.group-desc{margin:0;font-size:13px;color:var(--fg-muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.card{display:flex;gap:14px;align-items:flex-start;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:inherit;min-width:0;transition:border-color .15s,transform .15s}
+.card:hover{border-color:var(--accent)}
+.card:active{transform:scale(.99)}
+.card-icon{flex:none;width:42px;height:42px;border-radius:11px;background:var(--accent-soft);color:var(--accent-strong);display:grid;place-items:center}
+.card-icon svg{width:24px;height:24px}
+.card-body{display:grid;gap:3px;min-width:0}
+.card-title{font-weight:600;font-size:17px}
+.card-desc{font-size:14px;color:var(--fg-muted);line-height:1.4}
+
+/* Module page */
+.mod-head{margin-bottom:16px;max-width:720px}
+.mod-head h1{font-size:clamp(28px,5vw,36px)}
+.seg{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;min-height:40px;border:0;border-radius:9px;background:transparent;color:var(--fg-muted);font-weight:500;font-size:14px;padding:0 10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--accent-strong);box-shadow:0 1px 2px rgba(0,0,0,.08);font-weight:600}
+.seg.small button{min-height:36px;font-size:13px}
+.mode{margin-bottom:16px;max-width:560px}
+.layout{display:grid;gap:16px;align-items:start}
+.col-in,.col-out{display:grid;gap:14px;min-width:0}
+@media (min-width:760px){
+  .layout{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:24px}
+  .col-out{position:sticky;top:calc(env(safe-area-inset-top,0px) + 72px)}
+}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;min-width:0}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.panel-title{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-muted)}
+.example-chip{font-size:12px;font-weight:500;color:var(--accent-strong);background:var(--accent-soft);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px 12px}
+.field{display:grid;gap:6px;min-width:0;align-content:start}
+.field.full,.fields-heading,.matrix,.rows{grid-column:1/-1}
+.fields-heading{font-size:13px;font-weight:600;color:var(--fg);padding-top:10px;border-top:1px dashed var(--border)}
+.fields-heading:first-child{border-top:0;padding-top:0}
+.field label{font-size:13px;font-weight:500;color:var(--fg);display:flex;flex-wrap:wrap;align-items:center;gap:6px;line-height:1.3}
+.unit{font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--fg-muted);background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:1px 6px}
+.opt{font-size:11px;color:var(--fg-muted);font-weight:400}
+.fields input,.fields select{width:100%;min-height:44px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:var(--surface);color:var(--fg);padding:0 12px;font-size:16px;font-variant-numeric:tabular-nums;transition:border-color .15s,box-shadow .15s}
+.fields input::placeholder{color:var(--fg-muted);opacity:.7}
+.fields input:focus,.fields select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.hint{font-size:12px;color:var(--fg-muted);line-height:1.4}
+.matrix{display:grid;grid-template-columns:minmax(0,1.15fr) repeat(var(--cols,2),minmax(0,1fr));gap:8px;align-items:center}
+.mx-head{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--fg-muted);min-width:0;overflow-wrap:anywhere}
+.mx-row{font-size:14px;font-weight:500;min-width:0;overflow-wrap:anywhere}
+.rows{display:grid;gap:10px}
+.rows-head{display:flex;justify-content:space-between;align-items:center}
+.row-item{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 48px 12px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.row-item .row-name{grid-column:1/-1}
+.row-del{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--fg-muted);font-size:18px;line-height:1;cursor:pointer}
+.row-del:disabled{opacity:.35;cursor:default}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:var(--radius-sm);border:1px solid var(--border-strong);background:var(--surface);color:var(--fg);font-weight:600;font-size:15px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-strong);border-color:var(--accent-strong)}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--accent-strong)}
+.btn-dashed{border-style:dashed;width:100%;font-weight:500;color:var(--fg-muted)}
+.actions{display:flex;flex-wrap:wrap;gap:10px}
+.actions .btn-primary{flex:1 1 180px}
+
+/* Results */
+.results{display:grid;gap:14px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;min-width:0}
+.tile-label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:6px}
+.tile-value{font-family:var(--font-display);font-weight:700;font-size:38px;line-height:1;color:var(--accent-strong);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tile-unit{font-family:var(--font-body);font-size:15px;font-weight:500;color:var(--fg-muted);margin-left:6px}
+.tile-note{font-size:12px;color:var(--fg-muted);margin-top:6px}
+.kv{margin:0;display:grid}
+.kv-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-top:1px solid var(--border)}
+.kv-row:first-child{border-top:0}
+.kv dt{font-size:14px;color:var(--fg);display:flex;flex-direction:column;gap:2px;min-width:0}
+.kv-note{font-size:12px;color:var(--fg-muted)}
+.kv dd{margin:0;font-weight:600;font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kv-unit{font-weight:500;color:var(--fg-muted);font-size:13px;margin-left:5px}
+.table-wrap{overflow-x:auto}
+table.data{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+table.data th{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);white-space:nowrap}
+table.data td{padding:8px;border-bottom:1px solid var(--border);white-space:nowrap}
+table.data .num{text-align:right}
+table.data tr:last-child td{border-bottom:0;font-weight:600}
+.warns{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.warn-item{background:var(--warn-soft);color:var(--fg);border-left:3px solid var(--warn);border-radius:8px;padding:10px 12px;font-size:14px}
+.empty{background:var(--surface);border:1px dashed var(--border-strong);border-radius:var(--radius);padding:18px;color:var(--fg-muted);font-size:14px;text-align:center}
+details.formulas{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:0 16px}
+details.formulas summary{cursor:pointer;font-weight:600;font-size:15px;padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.formulas summary::-webkit-details-marker{display:none}
+details.formulas summary::after{content:"+";font-size:20px;color:var(--fg-muted)}
+details[open].formulas summary::after{content:"−"}
+.formula-body{padding:0 0 16px;display:grid;gap:10px;font-size:14px;color:var(--fg)}
+.formula-body p{margin:0;color:var(--fg-muted)}
+.eq{font-family:var(--font-mono);font-size:13.5px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;overflow-x:auto;white-space:nowrap}
+.formula-body table{border-collapse:collapse;font-size:13px}
+.formula-body td,.formula-body th{padding:4px 8px;border-bottom:1px solid var(--border);text-align:left}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:40;max-width:calc(100vw - 32px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.copy-fallback{width:100%;min-height:180px;font-family:var(--font-mono);font-size:13px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:10px;background:var(--surface);color:var(--fg)}
+.foot{max-width:1040px;margin:0 auto;padding-block:8px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font-size:12px;color:var(--fg-muted);text-align:center;line-height:1.5}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFFFF">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1B1F25">
+<meta name="description" content="Cevher hazırlama tesisi hesapları: randıman, tenör, metal dengesi, pülp, devreden yük, öğütme enerjisi, eleme, kapasite.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Cevher Hesap">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="iconbtn" id="back" href="#" aria-label="Ana ekrana dön" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <div class="brand"><a href="#">Cevher <span>Hesap</span></a><span class="crumb" id="crumb"></span></div>
+    <button class="iconbtn" id="gear" type="button" aria-label="Ayarlar" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="15" cy="7" r="2.2" fill="var(--surface)"/><circle cx="8" cy="12" r="2.2" fill="var(--surface)"/><circle cx="17" cy="17" r="2.2" fill="var(--surface)"/></svg></button>
+    <div class="settings-pop" id="settings" hidden>
+      <div class="set-row"><span>Tema</span><div class="seg small" data-set="theme"><button type="button" data-v="auto">Sistem</button><button type="button" data-v="light">Açık</button><button type="button" data-v="dark">Koyu</button></div></div>
+      <div class="set-row"><span>Ondalık ayırıcı</span><div class="seg small" data-set="decimal"><button type="button" data-v="tr">Virgül (1,5)</button><button type="button" data-v="en">Nokta (1.5)</button></div></div>
+    </div>
+  </div>
+</header>
+<main class="page" id="app"></main>
+<footer class="foot">Cevher Hesap Aracı · Sürüm 1.0 · Formüller cevher hazırlama literatüründeki standart denge bağıntılarına (Wills) dayanır. Sonuçlar girilen analiz ve tartımların doğruluğuna bağlıdır; mühendislik yargısıyla değerlendirin.</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+'use strict';
+/* ---------- storage: per-viewer convenience only, every access guarded ---------- */
+var PREFIX='cevherhesap:';
+function sGet(k,fb){try{var s=localStorage.getItem(PREFIX+k);return s==null?fb:JSON.parse(s);}catch(e){return fb;}}
+function sSet(k,v){try{localStorage.setItem(PREFIX+k,JSON.stringify(v));}catch(e){}}
+
+/* ---------- settings ---------- */
+var settings={theme:'auto',decimal:'tr'};
+(function(){var s=sGet('settings',null);if(s&&typeof s==='object'){if(s.theme)settings.theme=s.theme;if(s.decimal)settings.decimal=s.decimal;}})();
+function applyTheme(){var r=document.documentElement;if(settings.theme==='light'||settings.theme==='dark')r.setAttribute('data-theme',settings.theme);else if(r.getAttribute('data-theme')&&settings.themeSetByApp)r.removeAttribute('data-theme');}
+
+/* ---------- numbers ---------- */
+function isNum(x){return typeof x==='number'&&isFinite(x);}
+function parseNum(s){
+  if(typeof s==='number')return isFinite(s)?s:null;
+  if(s==null)return null;
+  s=String(s).trim().replace(/\s+/g,'');
+  if(!s)return null;
+  var hasC=s.indexOf(',')>=0,hasD=s.indexOf('.')>=0;
+  if(hasC&&hasD){
+    if(s.lastIndexOf(',')>s.lastIndexOf('.'))s=s.replace(/\./g,'').replace(',','.');
+    else s=s.replace(/,/g,'');
+  }else if(hasC){
+    s=(s.match(/,/g)||[]).length>1?s.replace(/,/g,''):s.replace(',','.');
+  }else if(hasD&&(s.match(/\./g)||[]).length>1){
+    s=s.replace(/\./g,'');
+  }
+  var n=Number(s);return isFinite(n)?n:null;
+}
+var nfCache={};
+function locale(){return settings.decimal==='tr'?'tr-TR':'en-US';}
+function fmt(n,d){
+  if(!isNum(n))return '—';
+  if(d==null)d=2;
+  var k=locale()+'|'+d;
+  var nf=nfCache[k]||(nfCache[k]=new Intl.NumberFormat(locale(),{minimumFractionDigits:d,maximumFractionDigits:d}));
+  return nf.format(n);
+}
+function fmtFree(n,maxD){
+  if(!isNum(n))return '—';
+  if(maxD==null)maxD=4;
+  var k=locale()+'|free'+maxD;
+  var nf=nfCache[k]||(nfCache[k]=new Intl.NumberFormat(locale(),{minimumFractionDigits:0,maximumFractionDigits:maxD}));
+  return nf.format(n);
+}
+function decStr(x){return String(x==null?'':x).replace('.',settings.decimal==='tr'?',':'.');}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function $(id){return document.getElementById(id);}
+var toastTimer=null;
+function toast(msg){var t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show');},2200);}
+
+/* ---------- module registry ---------- */
+var GROUPS=[
+  {id:'denge',title:'Denge ve Verim',desc:'Tenör ve tonajdan randıman, ürün dağılımı ve denge kontrolü'},
+  {id:'pulp',title:'Pülp ve Su',desc:'Katı oranı, yoğunluk, su ihtiyacı ve devreden yük'},
+  {id:'komin',title:'Kırma, Öğütme, Eleme',desc:'Enerji ihtiyacı ve eleme performansı'},
+  {id:'isletme',title:'İşletme',desc:'Kapasite ve nem dönüşümleri'}
+];
+var MODULES=[];
+function register(m){MODULES.push(m);}
+function byId(id){for(var i=0;i<MODULES.length;i++)if(MODULES[i].id===id)return MODULES[i];return null;}
+function R(key,label,value,unit,digits,extra){
+  var o={key:key,label:label,value:isNum(value)?value:null,unit:unit||'',digits:digits==null?2:digits};
+  if(extra)for(var k in extra)o[k]=extra[k];
+  return o;
+}
+function inputDefs(mod,mode,values){return mod.inputs(mode,values||{});}
+function modeIds(mod){return mod.modes?mod.modes.map(function(m){return m.id;}):[null];}
+
+/* ---------- per-module state: {mode, values{key:rawString}, rows{key:[{col:rawString}]}, example} ---------- */
+function ensureKeys(mod,st,useExamples){
+  modeIds(mod).forEach(function(mode){
+    inputDefs(mod,mode,st.values).forEach(function(d){
+      if(d.type==='heading')return;
+      if(d.type==='rows'){
+        if(!Array.isArray(st.rows[d.key]))st.rows[d.key]=(d.exampleRows||[]).map(function(r){
+          var o={};d.columns.forEach(function(c){var val=r[c.key]==null?'':String(r[c.key]);o[c.key]=c.type==='number'?(useExamples?decStr(val):''):val;});return o;});
+      }else if(d.type==='matrix'){
+        d.cells.forEach(function(row){row.forEach(function(k){
+          if(st.values[k]===undefined)st.values[k]=(useExamples&&d.examples&&d.examples[k]!=null)?decStr(d.examples[k]):'';});});
+      }else if(st.values[d.key]===undefined){
+        var val='';if(d.default!=null)val=String(d.default);
+        if(useExamples&&d.example!=null&&d.example!=='')val=String(d.example);
+        st.values[d.key]=d.type==='number'?decStr(val):val;
+      }
+    });
+  });
+}
+function defaultState(mod){var st={mode:mod.modes?mod.modes[0].id:null,values:{},rows:{},example:true};ensureKeys(mod,st,true);return st;}
+function loadState(mod){
+  var s=sGet('mod:'+mod.id,null);
+  if(!s||typeof s!=='object'||!s.values)return defaultState(mod);
+  var st={mode:s.mode||null,values:s.values,rows:s.rows||{},example:!!s.example};
+  if(mod.modes&&!mod.modes.some(function(m){return m.id===st.mode;}))st.mode=mod.modes[0].id;
+  if(!mod.modes)st.mode=null;
+  ensureKeys(mod,st,false);
+  return st;
+}
+function clearState(mod,st){
+  st.values={};st.rows={};st.example=false;
+  modeIds(mod).forEach(function(mode){
+    inputDefs(mod,mode,st.values).forEach(function(d){
+      if(d.type==='heading')return;
+      if(d.type==='rows'){st.rows[d.key]=(d.exampleRows||[]).map(function(r){var o={};d.columns.forEach(function(c){o[c.key]=c.type==='text'?(r[c.key]||''):'';});return o;});}
+      else if(d.type==='matrix'){d.cells.forEach(function(row){row.forEach(function(k){st.values[k]='';});});}
+      else if(d.type==='number'){st.values[d.key]=d.default!=null?decStr(d.default):'';}
+      else{st.values[d.key]=d.default!=null?String(d.default):'';}
+    });
+  });
+}
+function parsed(mod,st){
+  var v={};
+  inputDefs(mod,st.mode,st.values).forEach(function(d){
+    if(d.type==='heading')return;
+    if(d.type==='rows'){v[d.key]=(st.rows[d.key]||[]).map(function(r){var o={};d.columns.forEach(function(c){o[c.key]=c.type==='number'?parseNum(r[c.key]):(r[c.key]||'');});return o;});}
+    else if(d.type==='matrix'){d.cells.forEach(function(row){row.forEach(function(k){v[k]=parseNum(st.values[k]);});});}
+    else if(d.type==='number'){v[d.key]=parseNum(st.values[d.key]);}
+    else{var s=st.values[d.key];v[d.key]=(s!=null&&s!=='')?s:(d.default!=null?String(d.default):'');}
+  });
+  return v;
+}
+
+/* ---------- input rendering ---------- */
+function fieldHTML(mod,d,st){
+  var id='in-'+mod.id+'-'+d.key,val=st.values[d.key]==null?'':st.values[d.key];
+  if(d.type==='heading')return '<div class="fields-heading">'+esc(d.label)+'</div>';
+  var unit=d.unit?' <span class="unit">'+esc(d.unit)+'</span>':'';
+  var opt=d.optional?' <span class="opt">isteğe bağlı</span>':'';
+  var hint=d.hint?'<div class="hint">'+d.hint+'</div>':'';
+  var aff=d.affects?' data-affects="1"':'';
+  var ctrl;
+  if(d.type==='select'){
+    ctrl='<select id="'+id+'" data-key="'+d.key+'"'+aff+'>'+d.options.map(function(o){return '<option value="'+esc(o.value)+'"'+(String(o.value)===String(val)?' selected':'')+'>'+esc(o.label)+'</option>';}).join('')+'</select>';
+  }else if(d.type==='text'){
+    ctrl='<input id="'+id+'" type="text" data-key="'+d.key+'" value="'+esc(val)+'" placeholder="'+esc(d.placeholder||'')+'" autocomplete="off" enterkeyhint="next"'+aff+'>';
+  }else{
+    ctrl='<input id="'+id+'" type="text" inputmode="decimal" data-key="'+d.key+'" value="'+esc(val)+'" placeholder="'+esc(d.placeholder||'')+'" autocomplete="off" enterkeyhint="next">';
+  }
+  return '<div class="field'+(d.full?' full':'')+'" data-field="'+d.key+'"'+(d.hidden?' hidden':'')+'><label for="'+id+'">'+esc(d.label)+unit+opt+'</label>'+ctrl+hint+'</div>';
+}
+function matrixHTML(mod,d,st){
+  var h='<div class="matrix" data-field="'+d.key+'" style="--cols:'+d.colLabels.length+'"><div class="mx-head"></div>'+d.colLabels.map(function(c){return '<div class="mx-head">'+esc(c)+'</div>';}).join('');
+  d.cells.forEach(function(row,i){
+    h+='<div class="mx-row">'+esc(d.rowLabels[i])+'</div>';
+    row.forEach(function(k,j){
+      var id='in-'+mod.id+'-'+k,val=st.values[k]==null?'':st.values[k];
+      h+='<div class="mx-cell field"><input id="'+id+'" type="text" inputmode="decimal" data-key="'+k+'" value="'+esc(val)+'" aria-label="'+esc(d.rowLabels[i])+', '+esc(d.colLabels[j])+'" autocomplete="off" enterkeyhint="next"></div>';
+    });
+  });
+  return h+'</div>';
+}
+function rowsHTML(mod,d,st){
+  var rows=st.rows[d.key]||[];
+  var h='<div class="rows" data-field="'+d.key+'"><div class="rows-head"><span class="panel-title">'+esc(d.label)+'</span></div>';
+  rows.forEach(function(r,i){
+    h+='<div class="row-item" data-row="'+i+'">';
+    d.columns.forEach(function(c){
+      var id='in-'+mod.id+'-'+d.key+'-'+i+'-'+c.key,val=r[c.key]==null?'':r[c.key],isT=c.type==='text';
+      h+='<div class="field'+(isT?' row-name':'')+'"><label for="'+id+'">'+esc(c.label)+(c.unit?' <span class="unit">'+esc(c.unit)+'</span>':'')+'</label><input id="'+id+'" type="text"'+(isT?'':' inputmode="decimal"')+' data-rows="'+d.key+'" data-row="'+i+'" data-col="'+c.key+'" value="'+esc(val)+'" placeholder="'+esc(c.placeholder||'')+'" autocomplete="off" enterkeyhint="next"></div>';
+    });
+    h+='<button type="button" class="row-del" data-del="'+d.key+'" data-row="'+i+'" aria-label="Satırı sil"'+(rows.length<=(d.minRows||1)?' disabled':'')+'>×</button></div>';
+  });
+  return h+'<button type="button" class="btn btn-dashed" data-add="'+d.key+'">'+esc(d.addLabel||'Satır ekle')+'</button></div>';
+}
+
+/* ---------- results rendering ---------- */
+var current=null,lastResult=null;
+function cellHTML(c){if(c&&typeof c==='object')return fmt(c.v,c.d)+(c.u?' '+esc(c.u):'');return esc(c);}
+function renderResults(){
+  var mod=current.mod,st=current.st,out=$('results'),v=parsed(mod,st),res;
+  try{res=mod.compute(v,st.mode)||{};}catch(e){res={warnings:['Hesaplama sırasında hata oluştu: '+e.message]};}
+  lastResult={v:v,res:res};
+  var results=res.results||[],prim=[],sec=[];
+  results.forEach(function(r){if(r.primary)prim.push(r);else if(r.value!=null||r.always)sec.push(r);});
+  var h='';
+  if(res.empty)h+='<div class="empty">'+esc(res.empty)+'</div>';
+  if(prim.length)h+='<div class="tiles">'+prim.map(function(r){return '<div class="tile"><div class="tile-label">'+esc(r.label)+'</div><div class="tile-value">'+fmt(r.value,r.digits)+(r.unit?'<span class="tile-unit">'+esc(r.unit)+'</span>':'')+'</div>'+(r.note?'<div class="tile-note">'+esc(r.note)+'</div>':'')+'</div>';}).join('')+'</div>';
+  if(sec.length)h+='<div class="panel"><div class="panel-title">Diğer sonuçlar</div><dl class="kv">'+sec.map(function(r){return '<div class="kv-row"><dt>'+esc(r.label)+(r.note?'<span class="kv-note">'+esc(r.note)+'</span>':'')+'</dt><dd>'+fmt(r.value,r.digits)+(r.unit?'<span class="kv-unit">'+esc(r.unit)+'</span>':'')+'</dd></div>';}).join('')+'</dl></div>';
+  (res.tables||[]).forEach(function(t){
+    h+='<div class="panel"><div class="panel-title">'+esc(t.title)+'</div><div class="table-wrap"><table class="data"><thead><tr>'+t.head.map(function(c,i){return '<th'+(i?' class="num"':'')+'>'+esc(c)+'</th>';}).join('')+'</tr></thead><tbody>'+t.rows.map(function(row){return '<tr>'+row.map(function(c,i){return '<td'+(i?' class="num"':'')+'>'+cellHTML(c)+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div></div>';
+  });
+  if(res.warnings&&res.warnings.length)h+='<ul class="warns">'+res.warnings.map(function(w){return '<li class="warn-item">'+esc(w)+'</li>';}).join('')+'</ul>';
+  out.innerHTML=h;
+}
+function renderInputs(){
+  var mod=current.mod,st=current.st;
+  $('fields').innerHTML=inputDefs(mod,st.mode,st.values).map(function(d){return d.type==='rows'?rowsHTML(mod,d,st):d.type==='matrix'?matrixHTML(mod,d,st):fieldHTML(mod,d,st);}).join('');
+  $('example-chip').hidden=!st.example;
+}
+function renderFormulas(){
+  var mod=current.mod,st=current.st;
+  $('formulas').innerHTML=typeof mod.formulas==='function'?mod.formulas(st.mode):(mod.formulas||'');
+  var n=$('notes');if(n)n.innerHTML=typeof mod.notes==='function'?mod.notes(st.mode):(mod.notes||'');
+}
+function save(){if(current)sSet('mod:'+current.mod.id,current.st);}
+
+/* ---------- copy summary ---------- */
+function summaryText(){
+  var mod=current.mod,st=current.st,v=parsed(mod,st),res=(lastResult&&lastResult.res)||{};
+  var title='Cevher Hesap • '+mod.title;
+  if(mod.modes){var m=mod.modes.filter(function(x){return x.id===st.mode;})[0];if(m)title+=' ('+m.label+')';}
+  var lines=[title,new Date().toLocaleString(locale(),{dateStyle:'short',timeStyle:'short'}),'','Girişler'];
+  inputDefs(mod,st.mode,st.values).forEach(function(d){
+    if(d.hidden||d.type==='heading')return;
+    if(d.type==='rows'){(v[d.key]||[]).forEach(function(r){lines.push('- '+d.columns.map(function(c){return c.type==='number'?c.label+' '+fmtFree(r[c.key])+(c.unit?' '+c.unit:''):String(r[c.key]||'');}).join(', '));});}
+    else if(d.type==='matrix'){d.cells.forEach(function(row,i){lines.push('- '+d.rowLabels[i]+': '+row.map(function(k,j){return d.colLabels[j]+' '+fmtFree(v[k]);}).join(', '));});}
+    else if(d.type==='select'){var o=d.options.filter(function(o){return String(o.value)===String(v[d.key]);})[0];lines.push('- '+d.label+': '+(o?o.label:v[d.key]));}
+    else if(d.type==='text'){if(v[d.key])lines.push('- '+d.label+': '+v[d.key]);}
+    else if(v[d.key]!=null)lines.push('- '+d.label+': '+fmtFree(v[d.key])+(d.unit?' '+d.unit:''));
+  });
+  lines.push('','Sonuçlar');
+  if(res.empty)lines.push(res.empty);
+  (res.results||[]).forEach(function(r){if(r.value!=null)lines.push('- '+r.label+': '+fmt(r.value,r.digits)+(r.unit?' '+r.unit:''));});
+  (res.tables||[]).forEach(function(t){lines.push('',t.title);lines.push(t.head.join(' | '));t.rows.forEach(function(row){lines.push(row.map(function(c){return (c&&typeof c==='object')?fmt(c.v,c.d)+(c.u?' '+c.u:''):String(c);}).join(' | '));});});
+  if(res.warnings&&res.warnings.length){lines.push('','Uyarılar');res.warnings.forEach(function(w){lines.push('- '+w);});}
+  return lines.join('\n');
+}
+function showCopyFallback(txt){
+  var box=$('copy-fallback');box.innerHTML='<textarea class="copy-fallback" readonly aria-label="Kopyalanacak özet"></textarea>';
+  var ta=box.firstChild;ta.value=txt;ta.focus();ta.select();
+}
+function copyText(txt){
+  var done=function(){toast('Kopyalandı');$('copy-fallback').innerHTML='';};
+  var fail=function(){
+    var ta=document.createElement('textarea');ta.value=txt;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.left='-9999px';
+    document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand('copy');}catch(e){}
+    document.body.removeChild(ta);
+    if(ok)done();else{toast('Otomatik kopyalama yapılamadı; metni seçip kopyalayın');showCopyFallback(txt);}
+  };
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,fail);
+    else fail();
+  }catch(e){fail();}
+}
+
+/* ---------- icons ---------- */
+function icon(paths){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+paths+'</svg>';}
+var ICONS={
+  funnel:icon('<path d="M3 5h18l-7 8v6l-4 2v-8L3 5z"/>'),
+  split:icon('<path d="M12 3v15M12 10l-7 7M12 10l7 7"/>'),
+  bars:icon('<path d="M4 20v-9M10 20V5M16 20v-7M2 20h20"/>'),
+  drop:icon('<path d="M12 3c3.5 4.2 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 2.5-6.8 6-11z"/>'),
+  loop:icon('<path d="M20 12a8 8 0 0 1-14.6 4.5M4 12a8 8 0 0 1 14.6-4.5M4 17v-4h4M20 7v4h-4"/>'),
+  bolt:icon('<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/>'),
+  mesh:icon('<path d="M4 4h16v16H4zM4 10h16M4 14h16M10 4v16M14 4v16"/>'),
+  flask:icon('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/>'),
+  scale:icon('<path d="M12 3v18M8 21h8M4 7h16M6 7l-3 7a3 3 0 0 0 6 0L6 7zM18 7l-3 7a3 3 0 0 0 6 0l-3-7"/>')
+};
+var BIRIM_OPTS=[{value:'%',label:'% (yüzde)'},{value:'g/t',label:'g/t'},{value:'ppm',label:'ppm'}];
+var TBIRIM_OPTS=[{value:'t/sa',label:'t/saat'},{value:'t/gün',label:'t/gün'},{value:'t',label:'t (toplam)'}];
+function metalUnit(b,tb){return b==='%'?tb:tb.replace(/^t/,'kg');}
+function metalAmount(ton,grade,b){return b==='%'?ton*grade/100:ton*grade/1000;}
+
+/* ================= 1. İki Ürünlü Denge ================= */
+var MINERALS=[
+  {value:'',label:'Seçilmedi'},
+  {value:'34.6',label:'Kalkopirit – 34,6 % Cu'},
+  {value:'79.9',label:'Kalkosin – 79,9 % Cu'},
+  {value:'63.3',label:'Bornit – 63,3 % Cu'},
+  {value:'86.6',label:'Galen – 86,6 % Pb'},
+  {value:'67.1',label:'Sfalerit – 67,1 % Zn'},
+  {value:'72.4',label:'Manyetit – 72,4 % Fe'},
+  {value:'69.9',label:'Hematit – 69,9 % Fe'},
+  {value:'67.9',label:'Kromit – 67,9 % Cr₂O₃'},
+  {value:'59.9',label:'Molibdenit – 59,9 % Mo'},
+  {value:'78.8',label:'Kasiterit – 78,8 % Sn'},
+  {value:'80.5',label:'Şelit – 80,5 % WO₃'},
+  {value:'42.2',label:'Fluorapatit – 42,2 % P₂O₅'},
+  {value:'100',label:'Saf metal / mineral – 100 %'},
+  {value:'ozel',label:'Özel değer gir'}
+];
+register({
+  id:'iki-urun',group:'denge',title:'İki Ürünlü Denge',icon:ICONS.funnel,
+  desc:'Besleme, konsantre ve artık tenöründen ağırlık ve metal randımanı, konsantrasyon ve zenginleşme oranı; tonaj girilirse ürün tonajları ve metal dengesi.',
+  modes:[{id:'tenor',label:'Tenörlerden'},{id:'tonaj',label:'Tonaj ve tenörden'}],
+  inputs:function(mode,v){
+    var b=v.birim||'%',tb=v.tbirim||'t/sa';
+    var defs=[
+      {key:'birim',type:'select',label:'Tenör birimi',options:BIRIM_OPTS,default:'%',affects:true},
+      {key:'tbirim',type:'select',label:'Tonaj birimi',options:TBIRIM_OPTS,default:'t/sa',affects:true}
+    ];
+    if(mode==='tenor'){
+      defs.push({key:'f',type:'number',label:'Besleme tenörü (f)',unit:b,example:'1.0'},
+        {key:'c',type:'number',label:'Konsantre tenörü (c)',unit:b,example:'25'},
+        {key:'t',type:'number',label:'Artık tenörü (t)',unit:b,example:'0.1'},
+        {key:'F',type:'number',label:'Besleme tonajı (F)',unit:tb,optional:true,example:'200',hint:'Girilirse ürün tonajları ve metal dengesi tablosu hesaplanır.'});
+    }else{
+      defs.push({key:'F',type:'number',label:'Besleme tonajı (F)',unit:tb,example:'200'},
+        {key:'C',type:'number',label:'Konsantre tonajı (C)',unit:tb,example:'7.23'},
+        {key:'f',type:'number',label:'Besleme tenörü (f)',unit:b,example:'1.0'},
+        {key:'c',type:'number',label:'Konsantre tenörü (c)',unit:b,example:'25'});
+    }
+    defs.push({key:'mineral',type:'select',label:'Ayırma verimi için mineral',options:MINERALS,default:'',affects:true,full:true,optional:true,hint:'Schulz ayırma verimi için saf mineralin metal içeriği (m) kullanılır.'},
+      {key:'m',type:'number',label:'Saf mineral metal içeriği (m)',unit:'%',hidden:v.mineral!=='ozel'});
+    return defs;
+  },
+  compute:function(v,mode){
+    var b=v.birim,tb=v.tbirim,W=[];
+    var f=v.f,c=v.c,t=v.t,F=v.F,C=v.C,T=null,Y=null,Rr=null,K=null,Z=null;
+    if(mode==='tenor'){
+      if(!isNum(f)||!isNum(c)||!isNum(t))return {empty:'Sonuçlar için besleme, konsantre ve artık tenörlerini girin.'};
+      if(c===t){W.push('Konsantre ve artık tenörü eşit olamaz (c = t); ağırlık randımanı tanımsız.');return {warnings:W};}
+      Y=(f-t)/(c-t)*100;K=(c-t)/(f-t);Z=f?c/f:null;Rr=f?Y*c/f:null;
+      if(isNum(F)){C=F*Y/100;T=F-C;}
+    }else{
+      if(!isNum(F)||!isNum(C)||!isNum(f)||!isNum(c))return {empty:'Sonuçlar için besleme ve konsantre tonajları ile tenörlerini girin.'};
+      if(F<=0||C<=0)W.push('Tonajlar sıfırdan büyük olmalı.');
+      if(C>=F)W.push('Konsantre tonajı besleme tonajından küçük olmalı (C < F).');
+      T=F-C;Y=F?C/F*100:null;Rr=(F*f)?C*c/(F*f)*100:null;t=T?(F*f-C*c)/T:null;K=C?F/C:null;Z=f?c/f:null;
+      if(isNum(t)&&t<0)W.push('Hesaplanan artık tenörü negatif: konsantredeki metal beslemedekinden fazla görünüyor; tonaj veya tenörleri kontrol edin.');
+    }
+    if(!(f>0))W.push('Besleme tenörü sıfırdan büyük olmalı.');
+    if(isNum(c)&&isNum(f)&&c<f)W.push('Konsantre tenörü besleme tenöründen düşük; zenginleşme yok.');
+    if(mode==='tenor'&&isNum(Y)&&(Y<0||Y>100))W.push('Tenörler tutarsız: besleme tenörü artık ile konsantre arasında olmalı (t < f < c).');
+    if(isNum(Rr)&&Rr>100.0001)W.push('Metal randımanı % 100’ü aşıyor; girilen değerleri kontrol edin.');
+    var m=null;if(v.mineral==='ozel')m=v.m;else if(v.mineral)m=parseFloat(v.mineral);
+    var SE=null,Rg=null;
+    if(isNum(m)&&m>0&&isNum(Y)&&isNum(Rr)){
+      var mU=(b==='%')?m:m*10000;
+      if(mU<=c)W.push('Konsantre tenörü saf mineral içeriğini aşamaz; ayırma verimi hesaplanmadı.');
+      else if(mU>f){Rg=Y*(mU-c)/(mU-f);SE=Rr-Rg;}
+    }
+    var results=[
+      R('R','Metal randımanı (R)',Rr,'%',2,{primary:true}),
+      R('Y','Ağırlık randımanı (Y)',Y,'%',2,{primary:true,note:'kütle verimi, C / F'}),
+      R('K','Konsantrasyon oranı (K)',K,'',2,{note:'F / C'}),
+      R('Z','Zenginleşme oranı (Z)',Z,'',2,{note:'c / f'})
+    ];
+    if(mode==='tonaj')results.push(R('t','Hesaplanan artık tenörü (t)',t,b,3));
+    results.push(R('kayip','Artığa kaçan metal',isNum(Rr)?100-Rr:null,'%',2));
+    if(isNum(C)&&isNum(T))results.push(R('C','Konsantre tonajı (C)',C,tb,2),R('T','Artık tonajı (T)',T,tb,2));
+    if(isNum(SE))results.push(R('SE','Ayırma verimi (Schulz)',SE,'%',2,{note:'R − gang randımanı'}),R('Rg','Gang randımanı (Rg)',Rg,'%',2,{note:'gangın konsantreye kaçışı'}));
+    var tables=[];
+    if(isNum(F)&&isNum(C)&&isNum(T)&&isNum(t)&&isNum(f)&&isNum(c)){
+      var mu=metalUnit(b,tb),mF=metalAmount(F,f,b),mC=metalAmount(C,c,b),mT=metalAmount(T,t,b);
+      tables.push({title:'Metal dengesi',head:['Akış','Tonaj ('+tb+')','Tenör ('+b+')','Metal ('+mu+')','Dağılım (%)'],rows:[
+        ['Besleme',{v:F,d:2},{v:f,d:2},{v:mF,d:3},{v:100,d:1}],
+        ['Konsantre',{v:C,d:2},{v:c,d:2},{v:mC,d:3},{v:mF?mC/mF*100:null,d:2}],
+        ['Artık',{v:T,d:2},{v:t,d:2},{v:mT,d:3},{v:mF?mT/mF*100:null,d:2}]]});
+    }
+    return {results:results,tables:tables,warnings:W};
+  },
+  formulas:function(mode){
+    var h='<p>Semboller: <var>f</var> besleme, <var>c</var> konsantre, <var>t</var> artık tenörü; <var>F</var>, <var>C</var>, <var>T</var> tonajlar; <var>Y</var> ağırlık, <var>R</var> metal randımanı (%).</p>';
+    if(mode==='tenor'){
+      h+='<div class="eq">Y = (f − t) / (c − t) × 100</div>'+
+         '<div class="eq">R = (c / f) × Y = c (f − t) / [f (c − t)] × 100</div>'+
+         '<div class="eq">K = F / C = 100 / Y = (c − t) / (f − t)</div>'+
+         '<div class="eq">Z = c / f</div>'+
+         '<div class="eq">C = F · Y / 100,   T = F − C</div>';
+    }else{
+      h+='<div class="eq">Y = C / F × 100</div>'+
+         '<div class="eq">R = C · c / (F · f) × 100</div>'+
+         '<div class="eq">t = (F · f − C · c) / (F − C)</div>'+
+         '<div class="eq">K = F / C,   Z = c / f</div>';
+    }
+    h+='<div class="eq">Ayırma verimi (Schulz): AV = R − R<sub>g</sub>,   R<sub>g</sub> = Y (m − c) / (m − f)</div>'+
+       '<p>İki ürünlü formül kütle ve metal dengesinden türetilir; akışların kararlı durumda olduğunu ve analizlerin temsilî olduğunu varsayar. Ayırma verimi, metal randımanı ile gangın konsantreye kaçış oranının farkıdır; <var>m</var> saf mineralin metal içeriğidir (g/t tenörlerde m otomatik olarak g/t’ye çevrilir).</p>';
+    return h;
+  }
+});
+
+/* ================= 2. Üç Ürünlü Denge ================= */
+register({
+  id:'uc-urun',group:'denge',title:'Üç Ürünlü Denge',icon:ICONS.split,
+  desc:'İki konsantre ve artık üreten devrelerde (ör. Pb-Zn) her ürünün ağırlık randımanı ve her metalin ürünlere dağılımı.',
+  inputs:function(mode,v){
+    var b=v.birim||'%',tb=v.tbirim||'t/sa',m1=v.m1||'Metal 1',m2=v.m2||'Metal 2';
+    return [
+      {key:'m1',type:'text',label:'Metal 1 adı',placeholder:'Pb',default:'Pb',affects:true},
+      {key:'m2',type:'text',label:'Metal 2 adı',placeholder:'Zn',default:'Zn',affects:true},
+      {key:'birim',type:'select',label:'Tenör birimi',options:BIRIM_OPTS,default:'%',affects:true},
+      {key:'tbirim',type:'select',label:'Tonaj birimi',options:TBIRIM_OPTS,default:'t/sa',affects:true},
+      {key:'mx',type:'matrix',label:'Tenörler',rowLabels:['Besleme','Konsantre 1 ('+m1+')','Konsantre 2 ('+m2+')','Artık'],colLabels:[m1+' ('+b+')',m2+' ('+b+')'],
+        cells:[['f1','f2'],['c11','c12'],['c21','c22'],['t1','t2']],examples:{f1:'5',f2:'10',c11:'70',c12:'5',c21:'2',c22:'55',t1:'0.5',t2:'1'}},
+      {key:'F',type:'number',label:'Besleme tonajı (F)',unit:tb,optional:true,example:'100'}
+    ];
+  },
+  compute:function(v){
+    var b=v.birim,tb=v.tbirim,m1=v.m1||'Metal 1',m2=v.m2||'Metal 2',W=[];
+    var need=['f1','f2','c11','c12','c21','c22','t1','t2'];
+    for(var i=0;i<need.length;i++)if(!isNum(v[need[i]]))return {empty:'Sonuçlar için dört akışın iki metal tenörünü de girin.'};
+    var f1=v.f1,f2=v.f2,c11=v.c11,c12=v.c12,c21=v.c21,c22=v.c22,t1=v.t1,t2=v.t2;
+    var D=(c11-t1)*(c22-t2)-(c12-t2)*(c21-t1);
+    if(Math.abs(D)<1e-9){W.push('Denklem sistemi çözülemiyor: konsantre ve artık tenörleri birbirinden yeterince farklı değil.');return {warnings:W};}
+    var Y1=((f1-t1)*(c22-t2)-(f2-t2)*(c21-t1))/D*100;
+    var Y2=((f2-t2)*(c11-t1)-(f1-t1)*(c12-t2))/D*100;
+    var Yt=100-Y1-Y2;
+    if(!(f1>0)||!(f2>0))W.push('Besleme tenörleri sıfırdan büyük olmalı.');
+    if(Y1<0||Y1>100||Y2<0||Y2>100||Yt<0||Yt>100)W.push('Tenörler tutarsız: hesaplanan ağırlık randımanlarından biri 0–100 aralığının dışında.');
+    var rec=function(Y,c,f){return f?Y*c/f:null;};
+    var R11=rec(Y1,c11,f1),R12=rec(Y1,c12,f2),R21=rec(Y2,c21,f1),R22=rec(Y2,c22,f2),Rt1=rec(Yt,t1,f1),Rt2=rec(Yt,t2,f2);
+    if((isNum(R11)&&R11>100.0001)||(isNum(R22)&&R22>100.0001))W.push('Bir metalin randımanı % 100’ü aşıyor; tenörleri kontrol edin.');
+    var F=v.F,hasF=isNum(F);
+    var results=[
+      R('R11',m1+' randımanı, Konsantre 1',R11,'%',2,{primary:true}),
+      R('R22',m2+' randımanı, Konsantre 2',R22,'%',2,{primary:true}),
+      R('Y1','Konsantre 1 ağırlık randımanı',Y1,'%',2),
+      R('Y2','Konsantre 2 ağırlık randımanı',Y2,'%',2),
+      R('Yt','Artık ağırlık oranı',Yt,'%',2),
+      R('R12',m2+' kaybı, Konsantre 1’e',R12,'%',2),
+      R('R21',m1+' kaybı, Konsantre 2’ye',R21,'%',2),
+      R('K1','Konsantrasyon oranı, Konsantre 1',Y1?100/Y1:null,'',2),
+      R('K2','Konsantrasyon oranı, Konsantre 2',Y2?100/Y2:null,'',2)
+    ];
+    if(hasF)results.push(R('C1','Konsantre 1 tonajı',F*Y1/100,tb,2),R('C2','Konsantre 2 tonajı',F*Y2/100,tb,2),R('T','Artık tonajı',F*Yt/100,tb,2));
+    var head=['Akış','Ağırlık (%)',m1+' dağılımı (%)',m2+' dağılımı (%)'];if(hasF)head.splice(1,0,'Tonaj ('+tb+')');
+    var row=function(name,Y,r1,r2){var r=[name];if(hasF)r.push({v:F*Y/100,d:2});r.push({v:Y,d:2},{v:r1,d:2},{v:r2,d:2});return r;};
+    var sum=function(a,b2,c){return (a||0)+(b2||0)+(c||0);};
+    var tables=[{title:'Dağılım tablosu',head:head,rows:[
+      row('Konsantre 1 ('+m1+')',Y1,R11,R12),row('Konsantre 2 ('+m2+')',Y2,R21,R22),row('Artık',Yt,Rt1,Rt2),row('Toplam',100,sum(R11,R21,Rt1),sum(R12,R22,Rt2))]}];
+    return {results:results,tables:tables,warnings:W};
+  },
+  formulas:function(){
+    return '<p>Alt simgelerde ilk rakam ürünü (1: konsantre 1, 2: konsantre 2), ikinci rakam metali gösterir; <var>f</var> besleme, <var>t</var> artık tenörü.</p>'+
+      '<div class="eq">D = (c₁₁ − t₁)(c₂₂ − t₂) − (c₁₂ − t₂)(c₂₁ − t₁)</div>'+
+      '<div class="eq">Y₁ = [(f₁ − t₁)(c₂₂ − t₂) − (f₂ − t₂)(c₂₁ − t₁)] / D × 100</div>'+
+      '<div class="eq">Y₂ = [(f₂ − t₂)(c₁₁ − t₁) − (f₁ − t₁)(c₁₂ − t₂)] / D × 100</div>'+
+      '<div class="eq">Y<sub>artık</sub> = 100 − Y₁ − Y₂</div>'+
+      '<div class="eq">R(metal i → ürün j) = Y<sub>j</sub> · c<sub>ji</sub> / f<sub>i</sub></div>'+
+      '<p>Dört akış için kütle dengesi ve iki metal dengesi yazılır; iki bilinmeyenli (Y₁, Y₂) sistem çözülür. Çözüm dengeyi tam kapatır; analiz hatası varsa kendini 0–100 dışına çıkan ağırlık randımanlarıyla gösterir.</p>';
+  }
+});
+
+/* ================= 3. Metal Dağılımı Tablosu ================= */
+register({
+  id:'metal-dagilimi',group:'denge',title:'Metal Dağılımı Tablosu',icon:ICONS.bars,
+  desc:'Birden çok ürün akışının tonaj ve tenöründen metal miktarı, dağılım yüzdesi ve hesaplanan besleme tenörü; ölçülen beslemeyle kapanma kontrolü.',
+  inputs:function(mode,v){
+    var b=v.birim||'%',tb=v.tbirim||'t/sa';
+    return [
+      {key:'birim',type:'select',label:'Tenör birimi',options:BIRIM_OPTS,default:'%',affects:true},
+      {key:'tbirim',type:'select',label:'Tonaj birimi',options:TBIRIM_OPTS,default:'t/sa',affects:true},
+      {key:'akislar',type:'rows',label:'Ürün akışları',addLabel:'Akış ekle',minRows:1,
+        columns:[{key:'ad',type:'text',label:'Akış adı',placeholder:'Konsantre'},{key:'ton',type:'number',label:'Tonaj',unit:tb},{key:'tenor',type:'number',label:'Tenör',unit:b}],
+        exampleRows:[{ad:'Konsantre',ton:'6',tenor:'25'},{ad:'Ara ürün',ton:'10',tenor:'2.5'},{ad:'Artık',ton:'184',tenor:'0.136'}]},
+      {key:'Fo',type:'number',label:'Ölçülen besleme tonajı',unit:tb,optional:true,example:'200'},
+      {key:'fo',type:'number',label:'Ölçülen besleme tenörü',unit:b,optional:true,example:'1.0'}
+    ];
+  },
+  compute:function(v){
+    var b=v.birim,tb=v.tbirim,W=[],rows=v.akislar||[];
+    var ok=rows.filter(function(r){return isNum(r.ton)&&isNum(r.tenor);});
+    if(!ok.length)return {empty:'En az bir akış için tonaj ve tenör girin.'};
+    if(rows.length-ok.length>0)W.push((rows.length-ok.length)+' satır eksik veri nedeniyle hesaba katılmadı.');
+    var mu=metalUnit(b,tb),ST=0,SM=0;
+    var calc=ok.map(function(r){var m=metalAmount(r.ton,r.tenor,b);ST+=r.ton;SM+=m;return {ad:r.ad||'Akış',ton:r.ton,tenor:r.tenor,m:m};});
+    var fcalc=ST?SM/ST*(b==='%'?100:1000):null;
+    var results=[R('f','Hesaplanan besleme tenörü',fcalc,b,3,{primary:true}),R('ST','Toplam tonaj',ST,tb,2,{primary:true}),R('SM','Toplam metal',SM,mu,3)];
+    var Fo=v.Fo,fo=v.fo;
+    if(isNum(Fo)&&Fo>0)results.push(R('eT','Tonaj kapanma farkı',(ST-Fo)/Fo*100,'%',2,{note:'(Σ ürün − ölçülen besleme) / besleme'}));
+    if(isNum(Fo)&&isNum(fo)&&Fo>0&&fo>0){
+      var mF=metalAmount(Fo,fo,b),eM=(SM-mF)/mF*100;
+      results.push(R('eM','Metal kapanma farkı',eM,'%',2),R('df','Tenör farkı (hesaplanan − ölçülen)',isNum(fcalc)?fcalc-fo:null,b,3));
+      if(Math.abs(eM)>5)W.push('Metal dengesi % 5’ten fazla açık; tonaj veya analizlerden biri hatalı olabilir.');
+    }
+    var trs=calc.map(function(r){return [r.ad,{v:r.ton,d:2},{v:ST?r.ton/ST*100:null,d:2},{v:r.tenor,d:3},{v:r.m,d:3},{v:SM?r.m/SM*100:null,d:2}];});
+    trs.push(['Toplam (hesaplanan besleme)',{v:ST,d:2},{v:100,d:1},{v:fcalc,d:3},{v:SM,d:3},{v:100,d:1}]);
+    return {results:results,tables:[{title:'Dağılım',head:['Akış','Tonaj ('+tb+')','Kütle (%)','Tenör ('+b+')','Metal ('+mu+')','Dağılım (%)'],rows:trs}],warnings:W};
+  },
+  formulas:function(){
+    return '<div class="eq">Metal<sub>i</sub> = tonaj<sub>i</sub> × tenör<sub>i</sub> / 100   (% tenör → t metal;  g/t tenör → /1000 → kg metal)</div>'+
+      '<div class="eq">Dağılım<sub>i</sub> (%) = metal<sub>i</sub> / Σ metal × 100</div>'+
+      '<div class="eq">Hesaplanan besleme tenörü = Σ (tonaj × tenör) / Σ tonaj</div>'+
+      '<div class="eq">Kapanma farkı (%) = (Σ ürün − ölçülen besleme) / ölçülen besleme × 100</div>'+
+      '<p>Ürünlerin toplamı beslemeyi vermelidir. Tonaj ve metal kapanma farkları örnekleme, tartım veya analiz hatalarının büyüklüğünü gösterir; vardiya raporlarında metal farkı için % ±5 yaygın bir kabul sınırıdır.</p>';
+  }
+});
+
+/* ================= 4. Pülp Hesapları ================= */
+register({
+  id:'pulp',group:'pulp',title:'Pülp Hesapları',icon:ICONS.drop,
+  desc:'Katı oranı, pülp yoğunluğu, hacimce katı ve seyreltme oranı; katı debisi girilirse su ve pülp debileri, hedef katı oranı için su ihtiyacı.',
+  inputs:function(mode,v){
+    var bil=v.bilinen||'cw';
+    var unitMap={cw:'%',rp:'kg/L',rpg:'g',cv:'%'};
+    var labelMap={cw:'Ağırlıkça katı oranı (Cw)',rp:'Pülp yoğunluğu (ρp)',rpg:'1 L pülpün kütlesi',cv:'Hacimce katı oranı (Cv)'};
+    return [
+      {key:'rs',type:'number',label:'Katı özgül ağırlığı (ρs)',unit:'t/m³',example:'2.7',hint:'Silikatlı cevher 2,6–2,9; sülfürlü konsantre 4–5; manyetit konsantresi ≈ 4,8.'},
+      {key:'bilinen',type:'select',label:'Bilinen değer',options:[{value:'cw',label:'Ağırlıkça katı oranı (%)'},{value:'rp',label:'Pülp yoğunluğu (kg/L)'},{value:'rpg',label:'1 L pülpün kütlesi (g)'},{value:'cv',label:'Hacimce katı oranı (%)'}],default:'cw',affects:true},
+      {key:'deger',type:'number',label:labelMap[bil],unit:unitMap[bil],example:'30'},
+      {key:'F',type:'number',label:'Katı debisi (kuru)',unit:'t/sa',optional:true,example:'200'},
+      {key:'cw2',type:'number',label:'Hedef katı oranı',unit:'%',optional:true,example:'25',hint:'Mevcut pülpü bu orana seyreltmek için gereken su hesaplanır.'},
+      {key:'rw',type:'number',label:'Su yoğunluğu (ρw)',unit:'kg/L',default:'1',optional:true}
+    ];
+  },
+  compute:function(v){
+    var W=[],rs=v.rs,rw=(isNum(v.rw)&&v.rw>0)?v.rw:1,bil=v.bilinen||'cw',x=v.deger;
+    if(!isNum(rs)||!isNum(x))return {empty:'Katı özgül ağırlığını ve bilinen değeri girin.'};
+    if(rs<=rw){W.push('Katı özgül ağırlığı su yoğunluğundan büyük olmalı.');return {warnings:W};}
+    var cw;
+    if(bil==='cw')cw=x/100;
+    else if(bil==='rp'||bil==='rpg'){var rpIn=bil==='rpg'?x/1000:x;cw=rs*(rpIn-rw)/(rpIn*(rs-rw));}
+    else{var cvIn=x/100,rpc=rw+cvIn*(rs-rw);cw=cvIn*rs/rpc;}
+    if(!(cw>0&&cw<1)){W.push('Girilen değer katı yoğunluğu ile tutarsız: katı oranı 0–100 arasında, pülp yoğunluğu su ile katı yoğunluğu arasında olmalı.');return {warnings:W};}
+    var rp=1/(cw/rs+(1-cw)/rw),cv=cw*rp/rs,D=(1-cw)/cw;
+    var results=[
+      R('cw','Ağırlıkça katı oranı (Cw)',cw*100,'%',2,{primary:true}),
+      R('rp','Pülp yoğunluğu (ρp)',rp,'kg/L',3,{primary:true}),
+      R('cv','Hacimce katı oranı (Cv)',cv*100,'%',2),
+      R('D','Seyreltme oranı (su / katı)',D,'',3),
+      R('gl','1 L pülpteki katı',cw*rp*1000,'g',0),
+      R('wl','1 L pülpteki su',(1-cw)*rp*1000/rw,'mL',0)
+    ];
+    var F=v.F,hasF=isNum(F)&&F>0;
+    if(hasF){
+      var Qs=F/rs,Qw=F*D/rw;
+      results.push(R('Mp','Pülp kütle debisi',F/cw,'t/sa',2),R('Qw','Su debisi',Qw,'m³/sa',2),R('Qp','Pülp hacim debisi',Qs+Qw,'m³/sa',2),R('Qs','Katı hacim debisi',Qs,'m³/sa',2));
+    }
+    var cw2=v.cw2;
+    if(isNum(cw2)){
+      var c2=cw2/100;
+      if(!(c2>0&&c2<1))W.push('Hedef katı oranı 0–100 arasında olmalı.');
+      else{
+        var perT=(1/c2-1/cw)/rw;
+        if(hasF)results.push(R('Wadd','Hedef için eklenecek su',perT*F,'m³/sa',2,{note:perT<0?'negatif: su alınmalı':'mevcut pülpe eklenir'}));
+        results.push(R('WaddT','Ton katı başına eklenecek su',perT,'m³/t',3));
+        if(perT<0)W.push('Hedef katı oranı mevcut orandan yüksek; su ilavesiyle değil koyulaştırma (su uzaklaştırma) ile ulaşılır.');
+      }
+    }
+    return {results:results,warnings:W};
+  },
+  formulas:function(){
+    return '<p>ρ<sub>s</sub> katı, ρ<sub>w</sub> su yoğunluğu; C<sub>w</sub> ağırlıkça, C<sub>v</sub> hacimce katı oranı (kesir); F kuru katı debisi.</p>'+
+      '<div class="eq">ρp = 1 / [Cw/ρs + (1 − Cw)/ρw]</div>'+
+      '<div class="eq">Cw = ρs (ρp − ρw) / [ρp (ρs − ρw)]</div>'+
+      '<div class="eq">Cv = Cw · ρp / ρs = (ρp − ρw) / (ρs − ρw)</div>'+
+      '<div class="eq">Seyreltme oranı = (1 − Cw) / Cw   (su kütlesi / katı kütlesi)</div>'+
+      '<div class="eq">Su debisi = F · (1 − Cw) / Cw / ρw,   Pülp debisi = F / ρs + su debisi</div>'+
+      '<div class="eq">Seyreltme suyu = F · (1/Cw₂ − 1/Cw₁) / ρw</div>'+
+      '<p>Marcy terazisi veya 1 L kap tartımı pülp yoğunluğunu verir; katı oranı buradan türetilir. Tuzlu veya asidik proses suyunda ρw’yi gerçek değerle değiştirin.</p>';
+  }
+});
+
+/* ================= 5. Devreden Yük ================= */
+register({
+  id:'devreden-yuk',group:'pulp',title:'Devreden Yük',icon:ICONS.loop,
+  desc:'Kapalı öğütme devresinde siklon besleme, üst akım ve alt akım verilerinden devreden yük yüzdesi ve değirmen beslemesi.',
+  modes:[{id:'kati',label:'Katı oranı'},{id:'boyut',label:'Tane boyu'},{id:'tonaj',label:'Tonaj'}],
+  inputs:function(mode){
+    var N={key:'N',type:'number',label:'Yeni besleme (taze cevher)',unit:'t/sa',optional:mode!=='tonaj',example:'100'};
+    if(mode==='kati')return [
+      {key:'cf',type:'number',label:'Siklon beslemesi katı oranı',unit:'%',example:'55'},
+      {key:'co',type:'number',label:'Üst akım (overflow) katı oranı',unit:'%',example:'35'},
+      {key:'cu',type:'number',label:'Alt akım (underflow) katı oranı',unit:'%',example:'75'},N];
+    if(mode==='boyut')return [
+      {key:'ref',type:'text',label:'Referans boyut',placeholder:'75 µm',default:'75 µm'},
+      {key:'pf',type:'number',label:'Siklon beslemesi, % geçen',unit:'%',example:'45'},
+      {key:'po',type:'number',label:'Üst akım, % geçen',unit:'%',example:'80'},
+      {key:'pu',type:'number',label:'Alt akım, % geçen',unit:'%',example:'30'},N];
+    return [N,
+      {key:'U',type:'number',label:'Siklon alt akımı',unit:'t/sa',optional:true,example:'250'},
+      {key:'CF',type:'number',label:'Siklon beslemesi (toplam)',unit:'t/sa',optional:true,hint:'Alt akım girilmezse siklon beslemesinden hesaplanır.'}];
+  },
+  compute:function(v,mode){
+    var W=[],CL=null;
+    if(mode==='kati'){
+      var cf=v.cf,co=v.co,cu=v.cu;
+      if(!isNum(cf)||!isNum(co)||!isNum(cu))return {empty:'Üç akışın katı oranını girin.'};
+      if([cf,co,cu].some(function(x){return x<=0||x>=100;})){W.push('Katı oranları 0 ile 100 arasında olmalı.');return {warnings:W};}
+      var Dil=function(x){return (100-x)/x;},Df=Dil(cf),Do=Dil(co),Du=Dil(cu);
+      if(Df===Du){W.push('Siklon beslemesi ve alt akım katı oranları eşit olamaz.');return {warnings:W};}
+      CL=(Do-Df)/(Df-Du);
+      if(!(cu>cf&&cf>co))W.push('Beklenen sıralama: alt akım > siklon beslemesi > üst akım katı oranı. Değerleri kontrol edin.');
+    }else if(mode==='boyut'){
+      var pf=v.pf,po=v.po,pu=v.pu;
+      if(!isNum(pf)||!isNum(po)||!isNum(pu))return {empty:'Üç akışın referans boyuttan geçen yüzdesini girin.'};
+      if(pf===pu){W.push('Siklon beslemesi ve alt akım değerleri eşit olamaz.');return {warnings:W};}
+      CL=(po-pf)/(pf-pu);
+      if(!(po>pf&&pf>pu))W.push('Beklenen sıralama: üst akım > siklon beslemesi > alt akım (% geçen). Değerleri kontrol edin.');
+    }else{
+      var N0=v.N,U=v.U,CF=v.CF;
+      if(!isNum(N0)||N0<=0)return {empty:'Yeni besleme tonajını ve alt akım ya da siklon beslemesi tonajını girin.'};
+      if(isNum(U))CL=U/N0;else if(isNum(CF))CL=(CF-N0)/N0;else return {empty:'Alt akım veya siklon beslemesi tonajını girin.'};
+    }
+    if(isNum(CL)&&CL<0)W.push('Devreden yük negatif çıktı; giriş değerleri fiziksel olarak tutarsız.');
+    var results=[R('CL','Devreden yük',CL*100,'%',1,{primary:true}),R('CLr','Devreden yük oranı',CL,'',3,{note:'alt akım / yeni besleme'})];
+    var N=v.N;
+    if(isNum(N)&&N>0&&isNum(CL))results.push(R('mill','Değirmen (siklon) beslemesi',N*(1+CL),'t/sa',1,{primary:true}),R('U','Siklon alt akımı',N*CL,'t/sa',1),R('O','Siklon üst akımı (devre ürünü)',N,'t/sa',1));
+    return {results:results,warnings:W};
+  },
+  formulas:function(){
+    return '<div class="eq">Seyreltme oranı D = (100 − katı %) / katı %</div>'+
+      '<div class="eq">DY = (D<sub>üst</sub> − D<sub>besleme</sub>) / (D<sub>besleme</sub> − D<sub>alt</sub>)</div>'+
+      '<div class="eq">DY = (p<sub>üst</sub> − p<sub>besleme</sub>) / (p<sub>besleme</sub> − p<sub>alt</sub>)   (referans boyuttan % geçen)</div>'+
+      '<div class="eq">DY = alt akım / yeni besleme,   Değirmen beslemesi = yeni besleme × (1 + DY)</div>'+
+      '<p>Kararlı durumda siklon üst akımı yeni beslemeye eşittir. Siklon çevresinde korunan herhangi bir özellik (su, referans boyuttan geçen oran) için denge yazılarak aynı biçimde türetilir. Pratikte birkaç elek fraksiyonu için hesaplanıp ortalaması alınır.</p>';
+  }
+});
+
+/* ================= 6. Bond Enerji ================= */
+register({
+  id:'bond',group:'komin',title:'Bond Enerji',icon:ICONS.bolt,
+  desc:'Bond iş indeksi ile öğütme enerjisi ve değirmen gücü; mevcut güçten ulaşılabilir ürün inceliği.',
+  modes:[{id:'enerji',label:'Enerji ve güç'},{id:'p80',label:'Güçten P80'}],
+  inputs:function(mode){
+    var base=[{key:'Wi',type:'number',label:'Bond iş indeksi (Wi)',unit:'kWh/t',example:'14'},{key:'F80',type:'number',label:'Besleme F80',unit:'µm',example:'10000'}];
+    var EF={key:'EF',type:'number',label:'Düzeltme çarpanı (EF toplam)',unit:'',optional:true,default:'1',hint:'Rowland verim faktörlerinin çarpımı; bilinmiyorsa 1.'};
+    if(mode==='enerji')return base.concat([{key:'P80',type:'number',label:'Ürün P80',unit:'µm',example:'150'},{key:'Q',type:'number',label:'Kapasite',unit:'t/sa',optional:true,example:'200'},EF]);
+    return base.concat([{key:'P',type:'number',label:'Değirmen gücü (net)',unit:'kW',example:'2000'},{key:'Q',type:'number',label:'Kapasite',unit:'t/sa',example:'200'},EF]);
+  },
+  compute:function(v,mode){
+    var W=[],Wi=v.Wi,F80=v.F80,EF=(isNum(v.EF)&&v.EF>0)?v.EF:1;
+    if(!isNum(Wi)||!isNum(F80))return {empty:'İş indeksi ve F80 değerini girin.'};
+    if(Wi<=0||F80<=0){W.push('Wi ve F80 sıfırdan büyük olmalı.');return {warnings:W};}
+    if(mode==='enerji'){
+      var P80=v.P80;
+      if(!isNum(P80))return {empty:'Ürün P80 değerini girin.'};
+      if(P80<=0){W.push('P80 sıfırdan büyük olmalı.');return {warnings:W};}
+      if(P80>=F80)W.push('P80, F80’den küçük olmalı; aksi halde enerji negatif çıkar.');
+      var W0=10*Wi*(1/Math.sqrt(P80)-1/Math.sqrt(F80)),Wc=W0*EF,Q=v.Q;
+      var results=[R('W','Özgül enerji (W)',Wc,'kWh/t',2,{primary:true,note:EF!==1?'EF çarpanı dahil':''}),R('RR','Küçültme oranı F80 / P80',F80/P80,'',1)];
+      if(isNum(Q)&&Q>0){results.unshift(R('P','Gerekli güç',Wc*Q,'kW',0,{primary:true}));results.push(R('E','Günlük enerji',Wc*Q*24,'kWh/gün',0));}
+      if(EF!==1)results.push(R('W0','Düzeltmesiz enerji',W0,'kWh/t',2));
+      return {results:results,warnings:W};
+    }
+    var P=v.P,Qp=v.Q;
+    if(!isNum(P)||!isNum(Qp))return {empty:'Değirmen gücü ve kapasiteyi girin.'};
+    if(P<=0||Qp<=0){W.push('Güç ve kapasite sıfırdan büyük olmalı.');return {warnings:W};}
+    var Wav=P/Qp/EF,x=Wav/(10*Wi)+1/Math.sqrt(F80),P80c=1/(x*x);
+    return {results:[R('P80','Ulaşılabilir P80',P80c,'µm',0,{primary:true}),R('W','Kullanılabilir özgül enerji',P/Qp,'kWh/t',2,{primary:true}),R('RR','Küçültme oranı F80 / P80',F80/P80c,'',1)],warnings:W};
+  },
+  formulas:function(){
+    return '<div class="eq">W = 10 · Wi · (1/√P80 − 1/√F80)   [kWh/t, boyutlar µm]</div>'+
+      '<div class="eq">Güç = W · Q · EF   [kW]</div>'+
+      '<div class="eq">P80 = 1 / [W/(10·Wi) + 1/√F80]²</div>'+
+      '<p>Bond üçüncü kırma teorisi: enerji, ürün ve besleme 80 % geçen boyutlarının kareköklerinin tersleriyle orantılıdır. Wi laboratuvar Bond testi ile belirlenir. EF, Rowland düzeltme faktörlerinin çarpımıdır (kuru öğütme, açık devre, değirmen çapı, iri besleme, incelik vb.); bilinmiyorsa 1 alınır.</p>';
+  },
+  notes:function(){
+    return '<p>Yaklaşık Bond iş indeksi değerleri (kWh/t). Cevhere göre geniş aralıkta değişir; tasarımda laboratuvar testi esastır.</p>'+
+      '<table><tr><th>Malzeme</th><th>Wi</th><th>Malzeme</th><th>Wi</th></tr>'+
+      '<tr><td>Barit</td><td>6</td><td>Kireçtaşı</td><td>12</td></tr>'+
+      '<tr><td>Boksit</td><td>9–10</td><td>Kuvars</td><td>13</td></tr>'+
+      '<tr><td>Kromit</td><td>9–10</td><td>Bakır cevheri</td><td>13</td></tr>'+
+      '<tr><td>Fosfat</td><td>10</td><td>Hematit</td><td>13</td></tr>'+
+      '<tr><td>Manyetit</td><td>10–11</td><td>Granit</td><td>14–15</td></tr>'+
+      '<tr><td>Kurşun-çinko cevheri</td><td>11–12</td><td>Altın cevheri</td><td>15</td></tr>'+
+      '<tr><td>Dolomit</td><td>11</td><td>Bazalt</td><td>20</td></tr></table>';
+  }
+});
+
+/* ================= 7. Elek Verimi ================= */
+register({
+  id:'elek',group:'komin',title:'Elek Verimi',icon:ICONS.mesh,
+  desc:'Besleme, elek üstü ve elek altı akımlarındaki ince tane oranından kütle dağılımı, elek altı verimi ve elek üstü verimi.',
+  inputs:function(){
+    return [
+      {key:'acik',type:'text',label:'Elek açıklığı',placeholder:'10 mm',default:'10 mm'},
+      {key:'f',type:'number',label:'Beslemede açıklıktan küçük (f)',unit:'%',example:'60'},
+      {key:'o',type:'number',label:'Elek üstünde açıklıktan küçük (o)',unit:'%',example:'10'},
+      {key:'u',type:'number',label:'Elek altında açıklıktan küçük (u)',unit:'%',default:'100',hint:'Elek altına iri tane kaçmıyorsa (sağlam elek) 100.'},
+      {key:'Q',type:'number',label:'Besleme tonajı',unit:'t/sa',optional:true,example:'300'}
+    ];
+  },
+  compute:function(v){
+    var W=[],f=v.f,o=v.o,u=v.u;
+    if(!isNum(f)||!isNum(o)||!isNum(u))return {empty:'Üç akışta açıklıktan küçük tane yüzdesini girin.'};
+    if(u<=o){W.push('Elek altındaki ince oranı (u) elek üstündekinden (o) büyük olmalı.');return {warnings:W};}
+    if(!(f>o&&f<=u))W.push('Besleme değeri (f) elek üstü (o) ile elek altı (u) değerleri arasında olmalı.');
+    var U=100*(f-o)/(u-o),O=100-U;
+    var Eu=f>0?u*(f-o)/(f*(u-o))*100:null;
+    var Eo=f<100?(u-f)*(100-o)/((u-o)*(100-f))*100:null;
+    var E=(isNum(Eu)&&isNum(Eo))?Eu*Eo/100:null;
+    var results=[
+      R('Eu','Elek altı verimi (ince kazanımı)',Eu,'%',2,{primary:true}),
+      R('E','Toplam verim (Eu × Eo)',E,'%',2,{primary:true}),
+      R('Eo','Elek üstü verimi (iri kazanımı)',Eo,'%',2),
+      R('U','Elek altına giden kütle',U,'%',2),
+      R('O','Elek üstünde kalan kütle',O,'%',2)
+    ];
+    var Q=v.Q;
+    if(isNum(Q)&&Q>0)results.push(R('QU','Elek altı tonajı',Q*U/100,'t/sa',1),R('QO','Elek üstü tonajı',Q*O/100,'t/sa',1));
+    return {results:results,warnings:W};
+  },
+  formulas:function(){
+    return '<p><var>f</var>, <var>o</var>, <var>u</var>: besleme, elek üstü ve elek altı akımlarında elek açıklığından küçük tane yüzdesi (elek analizi ile).</p>'+
+      '<div class="eq">Elek altı kütle (%) U = 100 (f − o) / (u − o),   Elek üstü O = 100 − U</div>'+
+      '<div class="eq">Eu = u (f − o) / [f (u − o)] × 100   (incelerin elek altına kazanımı)</div>'+
+      '<div class="eq">Eo = (u − f)(100 − o) / [(u − o)(100 − f)] × 100   (irilerin elek üstüne kazanımı)</div>'+
+      '<div class="eq">E = Eu × Eo / 100</div>'+
+      '<p>u = 100 iken Eu = 10⁴ (f − o) / [f (100 − o)] biçimindeki klasik elek verimi formülüne indirgenir. Elek üstünde kalan ince oran (o) yükseldikçe verim düşer; tipik endüstriyel verim % 85–95.</p>';
+  }
+});
+
+/* ================= 8. Tonaj ve Nem ================= */
+register({
+  id:'tonaj',group:'isletme',title:'Tonaj ve Nem',icon:ICONS.scale,
+  desc:'Yaş tonajdan kuru tonaj ve su miktarı; yıllık üretim hedefinden saatlik tasarım kapasitesi.',
+  inputs:function(){
+    return [
+      {key:'h1',type:'heading',label:'Nem dönüşümü'},
+      {key:'yas',type:'number',label:'Yaş tonaj',unit:'t',example:'1000'},
+      {key:'nem',type:'number',label:'Nem (yaş baz)',unit:'%',example:'8'},
+      {key:'h2',type:'heading',label:'Kapasite'},
+      {key:'yillik',type:'number',label:'Yıllık tonaj (kuru)',unit:'t/yıl',example:'1500000'},
+      {key:'gun',type:'number',label:'Çalışma günü',unit:'gün/yıl',default:'365'},
+      {key:'saat',type:'number',label:'Çalışma saati',unit:'sa/gün',default:'24'},
+      {key:'kull',type:'number',label:'Kullanılabilirlik',unit:'%',default:'92'}
+    ];
+  },
+  compute:function(v){
+    var W=[],results=[],any=false,yas=v.yas,nem=v.nem;
+    if(isNum(yas)&&isNum(nem)){
+      any=true;
+      if(nem<0||nem>=100)W.push('Nem 0 ile 100 arasında olmalı.');
+      else{var kuru=yas*(1-nem/100);results.push(R('kuru','Kuru tonaj',kuru,'t',2,{primary:true}),R('su','Su miktarı',yas-kuru,'t',2),R('nemk','Kuru bazda nem',nem/(100-nem)*100,'%',2,{note:'su / kuru katı'}));}
+    }
+    var yillik=v.yillik,gun=v.gun,saat=v.saat,kull=v.kull;
+    if(isNum(yillik)&&isNum(gun)&&isNum(saat)&&isNum(kull)){
+      any=true;var hrs=gun*saat*kull/100;
+      if(hrs<=0)W.push('Çalışma saati toplamı sıfırdan büyük olmalı.');
+      else results.push(R('tph','Tasarım kapasitesi',yillik/hrs,'t/sa',1,{primary:true}),R('tpd','Günlük ortalama',gun?yillik/gun:null,'t/gün',0),R('hrs','Yıllık çalışma saati',hrs,'sa/yıl',0));
+    }
+    if(!any)return {empty:'Yaş tonaj ve nem, ya da yıllık tonaj ve çalışma süresi bilgilerini girin.'};
+    return {results:results,warnings:W};
+  },
+  formulas:function(){
+    return '<div class="eq">Kuru tonaj = yaş tonaj × (100 − nem) / 100</div>'+
+      '<div class="eq">Kuru bazda nem (%) = su / kuru katı × 100 = nem / (100 − nem) × 100</div>'+
+      '<div class="eq">Yıllık çalışma saati = gün/yıl × sa/gün × kullanılabilirlik / 100</div>'+
+      '<div class="eq">Tasarım kapasitesi (t/sa) = yıllık tonaj / yıllık çalışma saati</div>'+
+      '<p>Nem yaş baz üzerinden (su / yaş kütle) girilir; laboratuvar nem analizleri genellikle bu şekildedir. Kullanılabilirlik, planlı ve plansız duruşlar düşüldükten sonra kalan çalışma zamanı oranıdır.</p>';
+  }
+});
+
+/* ---------- home ---------- */
+var SHORT={
+  'iki-urun':'f, c, t tenörlerinden randıman, ağırlık verimi, konsantrasyon ve zenginleşme oranı',
+  'uc-urun':'Pb-Zn tipi iki konsantreli devrede ağırlık randımanları ve metal dağılımı',
+  'metal-dagilimi':'Çok akışlı tonaj–tenör tablosundan metal dağılımı ve denge kapanması',
+  'pulp':'Katı oranı, pülp yoğunluğu, seyreltme oranı, su ve pülp debileri',
+  'devreden-yuk':'Katı oranı, tane boyu veya tonajdan devreden yük ve değirmen beslemesi',
+  'bond':'Wi, F80, P80 ile kWh/t ve değirmen gücü; güçten ulaşılabilir P80',
+  'elek':'Elek altı ve elek üstü verimleri, kütle dağılımı',
+  'tonaj':'Yaş–kuru tonaj dönüşümü ve yıllık hedeften saatlik kapasite'
+};
+function renderHome(){
+  current=null;lastResult=null;
+  $('back').hidden=true;$('crumb').textContent='';document.title='Cevher Hesap Aracı';
+  var h='<section class="home"><div class="hero"><h1>Cevher Hesap Aracı</h1><p class="lede">Randıman, tenör, pülp, devreden yük ve diğer tesis hesapları. Değerleri girin, sonuçlar yazdıkça güncellenir; son girişleriniz bu cihazda saklanır.</p></div>';
+  GROUPS.forEach(function(g){
+    var mods=MODULES.filter(function(m){return m.group===g.id;});if(!mods.length)return;
+    h+='<section class="group"><div class="group-head"><h2 class="group-title">'+esc(g.title)+'</h2><p class="group-desc">'+esc(g.desc)+'</p></div><div class="cards">'+
+      mods.map(function(m){return '<a class="card" href="#'+m.id+'"><span class="card-icon">'+m.icon+'</span><span class="card-body"><span class="card-title">'+esc(m.title)+'</span><span class="card-desc">'+esc(SHORT[m.id]||m.desc)+'</span></span></a>';}).join('')+'</div></section>';
+  });
+  $('app').innerHTML=h+'</section>';
+}
+
+/* ---------- module page ---------- */
+function openModule(mod){
+  var st=loadState(mod);current={mod:mod,st:st};lastResult=null;
+  $('back').hidden=false;$('crumb').textContent=mod.title;document.title=mod.title+' · Cevher Hesap';
+  var modes='';
+  if(mod.modes)modes='<div class="seg mode" id="mode" role="group" aria-label="Hesap yöntemi">'+mod.modes.map(function(m){return '<button type="button" data-mode="'+m.id+'" aria-pressed="'+(m.id===st.mode?'true':'false')+'">'+esc(m.label)+'</button>';}).join('')+'</div>';
+  var notes=mod.notes?'<details class="formulas"><summary>Notlar</summary><div class="formula-body" id="notes"></div></details>':'';
+  $('app').innerHTML='<section class="mod"><header class="mod-head"><h1>'+esc(mod.title)+'</h1><p class="lede">'+esc(mod.desc)+'</p></header>'+modes+
+    '<div class="layout"><div class="col-in"><div class="panel"><div class="panel-head"><span class="panel-title">Girişler</span><span class="example-chip" id="example-chip" hidden>Örnek değerler</span></div><div class="fields" id="fields"></div></div>'+
+    '<div class="actions"><button type="button" class="btn btn-primary" id="copy">Sonuçları kopyala</button><button type="button" class="btn" id="clear">Temizle</button><button type="button" class="btn btn-ghost" id="example">Örnek değerler</button></div><div id="copy-fallback"></div></div>'+
+    '<div class="col-out"><div class="results" id="results" aria-live="polite"></div><details class="formulas"><summary>Formüller</summary><div class="formula-body" id="formulas"></div></details>'+notes+'</div></div></section>';
+  bindModule();renderInputs();renderFormulas();renderResults();
+}
+function bindModule(){
+  var mod=current.mod,st=current.st,fields=$('fields');
+  fields.addEventListener('input',function(e){
+    var t=e.target;if(!t||!t.dataset)return;
+    if(t.dataset.rows){var rows=st.rows[t.dataset.rows],r=rows&&rows[+t.dataset.row];if(!r)return;r[t.dataset.col]=t.value;}
+    else if(t.dataset.key){st.values[t.dataset.key]=t.value;}
+    else return;
+    if(st.example){st.example=false;$('example-chip').hidden=true;}
+    save();renderResults();
+  });
+  fields.addEventListener('change',function(e){var t=e.target;if(t&&t.dataset&&t.dataset.affects){renderInputs();renderResults();}});
+  fields.addEventListener('keydown',function(e){
+    if(e.key!=='Enter'||!e.target||e.target.tagName!=='INPUT')return;
+    e.preventDefault();var all=Array.prototype.slice.call(fields.querySelectorAll('input,select')),i=all.indexOf(e.target);
+    if(i>=0&&i<all.length-1)all[i+1].focus();else e.target.blur();
+  });
+  fields.addEventListener('click',function(e){
+    var b=e.target&&e.target.closest?e.target.closest('button'):null;if(!b)return;
+    if(b.dataset.add){
+      var d=inputDefs(mod,st.mode,st.values).filter(function(x){return x.key===b.dataset.add;})[0];if(!d)return;
+      var o={};d.columns.forEach(function(c){o[c.key]='';});
+      (st.rows[d.key]=st.rows[d.key]||[]).push(o);st.example=false;save();renderInputs();renderResults();
+      var first=fields.querySelector('[data-rows="'+d.key+'"][data-row="'+(st.rows[d.key].length-1)+'"]');if(first)first.focus();
+    }else if(b.dataset.del){
+      var rows=st.rows[b.dataset.del];if(rows&&rows.length>1){rows.splice(+b.dataset.row,1);st.example=false;save();renderInputs();renderResults();}
+    }
+  });
+  var modeBar=$('mode');
+  if(modeBar)modeBar.addEventListener('click',function(e){
+    var b=e.target.closest('button[data-mode]');if(!b||b.dataset.mode===st.mode)return;
+    st.mode=b.dataset.mode;save();
+    Array.prototype.forEach.call(modeBar.querySelectorAll('button'),function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});
+    renderInputs();renderFormulas();renderResults();
+  });
+  $('copy').addEventListener('click',function(){copyText(summaryText());});
+  $('clear').addEventListener('click',function(){clearState(mod,st);save();renderInputs();renderResults();toast('Alanlar temizlendi');});
+  $('example').addEventListener('click',function(){var fresh=defaultState(mod);st.values=fresh.values;st.rows=fresh.rows;st.example=true;save();renderInputs();renderResults();toast('Örnek değerler yüklendi');});
+}
+
+/* ---------- settings panel ---------- */
+function renderSettings(){
+  Array.prototype.forEach.call(document.querySelectorAll('#settings [data-set]'),function(seg){
+    var k=seg.dataset.set;
+    Array.prototype.forEach.call(seg.querySelectorAll('button'),function(b){b.setAttribute('aria-pressed',b.dataset.v===settings[k]?'true':'false');});
+  });
+}
+function toggleSettings(show){$('settings').hidden=!show;$('gear').setAttribute('aria-expanded',show?'true':'false');}
+$('gear').addEventListener('click',function(e){e.stopPropagation();toggleSettings($('settings').hidden);});
+$('settings').addEventListener('click',function(e){
+  e.stopPropagation();
+  var b=e.target.closest('button[data-v]');if(!b)return;
+  var k=b.closest('[data-set]').dataset.set;settings[k]=b.dataset.v;
+  if(k==='theme')settings.themeSetByApp=true;
+  sSet('settings',{theme:settings.theme,decimal:settings.decimal});
+  applyTheme();renderSettings();nfCache={};
+  if(current)renderResults();
+});
+document.addEventListener('click',function(){if(!$('settings').hidden)toggleSettings(false);});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('settings').hidden)toggleSettings(false);});
+
+/* ---------- routing: plain #module-id, start view otherwise ---------- */
+function route(){
+  var id=(location.hash||'').replace(/^#\/?/,'');
+  var mod=id?byId(id):null;
+  if(mod)openModule(mod);else renderHome();
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',route);
+applyTheme();renderSettings();route();
+})();
+</script>
+
+<script>if('serviceWorker' in navigator&&location.protocol==='https:'){window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){});});}</script>
+</body>
+</html>
