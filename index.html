@@ -446,12 +446,120 @@ var ICONS={
   bolt:icon('<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/>'),
   mesh:icon('<path d="M4 4h16v16H4zM4 10h16M4 14h16M10 4v16M14 4v16"/>'),
   flask:icon('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/>'),
-  scale:icon('<path d="M12 3v18M8 21h8M4 7h16M6 7l-3 7a3 3 0 0 0 6 0L6 7zM18 7l-3 7a3 3 0 0 0 6 0l-3-7"/>')
+  scale:icon('<path d="M12 3v18M8 21h8M4 7h16M6 7l-3 7a3 3 0 0 0 6 0L6 7zM18 7l-3 7a3 3 0 0 0 6 0l-3-7"/>'),
+  percent:icon('<path d="M19 5 5 19"/><circle cx="7.5" cy="7.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/>')
 };
 var BIRIM_OPTS=[{value:'%',label:'% (yüzde)'},{value:'g/t',label:'g/t'},{value:'ppm',label:'ppm'}];
 var TBIRIM_OPTS=[{value:'t/sa',label:'t/saat'},{value:'t/gün',label:'t/gün'},{value:'t',label:'t (toplam)'}];
 function metalUnit(b,tb){return b==='%'?tb:tb.replace(/^t/,'kg');}
 function metalAmount(ton,grade,b){return b==='%'?ton*grade/100:ton*grade/1000;}
+
+/* ================= 0. Verim Hesabı (VERİM HESAP tablosu) ================= */
+register({
+  id:'verim-hesap',group:'denge',title:'Verim Hesabı',icon:ICONS.percent,
+  desc:'VERİM HESAP tablosundaki üç durum: verim belli ise konsantre ve artık miktarı; ürünler belli ise verim; sadece tenörler belli ise verim ve zenginleştirme oranı.',
+  modes:[{id:'verim',label:'Verim belli ise'},{id:'urun',label:'Ürünler belli ise'},{id:'tenor',label:'Sadece tenör belli ise'}],
+  inputs:function(mode,v){
+    var b=v.birim||'%',tb=v.tbirim||'t',ad=(v.bilesen||'').trim(),gb=ad?b+' '+ad:b;
+    var defs=[
+      {key:'bilesen',type:'text',label:'Bileşen (metal veya oksit)',placeholder:'Cr₂O₃',default:'Cr₂O₃',affects:true},
+      {key:'birim',type:'select',label:'Tenör birimi',options:BIRIM_OPTS,default:'%',affects:true},
+      {key:'tbirim',type:'select',label:'Miktar birimi',options:TBIRIM_OPTS,default:'t',affects:true}
+    ];
+    if(mode==='verim'){
+      defs.push({key:'F',type:'number',label:'Beslenen cevher miktarı',unit:tb,example:'1000'},
+        {key:'f',type:'number',label:'Beslenen cevher tenörü',unit:gb,example:'6'},
+        {key:'c',type:'number',label:'Konsantre tenörü',unit:gb,example:'46.57'},
+        {key:'R',type:'number',label:'Verim',unit:'%',example:'65',hint:'Beslemedeki '+(ad||'bileşen')+' miktarının konsantreye alınan payı.'});
+    }else if(mode==='urun'){
+      defs.push({key:'F',type:'number',label:'Beslenen cevher miktarı',unit:tb,example:'420'},
+        {key:'f',type:'number',label:'Beslenen cevher tenörü',unit:gb,example:'4.12'},
+        {key:'C',type:'number',label:'Üretilen konsantre miktarı',unit:tb,example:'16'},
+        {key:'c',type:'number',label:'Konsantre tenörü',unit:gb,example:'46.57'});
+    }else{
+      defs.push({key:'f',type:'number',label:'Beslenen cevher tenörü',unit:gb,example:'6'},
+        {key:'c',type:'number',label:'Konsantre tenörü',unit:gb,example:'46'},
+        {key:'t',type:'number',label:'Artık tenörü',unit:gb,example:'3'},
+        {key:'F',type:'number',label:'Beslenen cevher miktarı',unit:tb,optional:true,hint:'Girilirse konsantre ve artık miktarları ile denge tablosu da hesaplanır.'});
+    }
+    return defs;
+  },
+  compute:function(v,mode){
+    var b=v.birim,tb=v.tbirim,ad=(v.bilesen||'').trim(),gb=ad?b+' '+ad:b,W=[];
+    var F=v.F,f=v.f,C=v.C,c=v.c,t=v.t,Rr=v.R,T=null,Z=null;
+    if(mode==='verim'){
+      if(!isNum(F)||!isNum(f)||!isNum(c)||!isNum(Rr))return {empty:'Sonuçlar için beslenen cevher miktarı ve tenörü, konsantre tenörü ve verimi girin.'};
+      if(!(f>0)||!(c>0)||!(Rr>0)){W.push('Tenörler ve verim sıfırdan büyük olmalı.');return {warnings:W};}
+      Z=c/(f*Rr/100);C=F/Z;T=F-C;t=T>0?(F*f-C*c)/T:null;
+      if(C>=F)W.push('Hesaplanan konsantre miktarı beslemeye eşit veya daha büyük: bu tenörlerle bu verim sağlanamaz (R · f / c ≥ 1).');
+    }else if(mode==='urun'){
+      if(!isNum(F)||!isNum(f)||!isNum(C)||!isNum(c))return {empty:'Sonuçlar için beslenen cevher ve konsantre miktarları ile tenörlerini girin.'};
+      if(!(F>0)||!(C>0)){W.push('Miktarlar sıfırdan büyük olmalı.');return {warnings:W};}
+      if(C>=F)W.push('Konsantre miktarı beslenen cevher miktarından küçük olmalı (C < F).');
+      T=F-C;t=T>0?(F*f-C*c)/T:null;Rr=(F*f)?C*c/(F*f)*100:null;Z=F/C;
+    }else{
+      if(!isNum(f)||!isNum(c)||!isNum(t))return {empty:'Sonuçlar için besleme, konsantre ve artık tenörlerini girin.'};
+      if(c===t||f===t){W.push('Artık tenörü besleme veya konsantre tenörüne eşit olamaz; verim ve zenginleştirme oranı tanımsız.');return {warnings:W};}
+      Rr=f?c*(f-t)/(f*(c-t))*100:null;Z=(c-t)/(f-t);
+      if(isNum(F)){C=F/Z;T=F-C;}
+      if(!(t<f&&f<c))W.push('Tenörler tutarsız: artık < besleme < konsantre olmalı (t < f < c).');
+    }
+    if(isNum(f)&&!(f>0))W.push('Beslenen cevher tenörü sıfırdan büyük olmalı.');
+    if(isNum(c)&&isNum(f)&&c<f)W.push('Konsantre tenörü besleme tenöründen düşük; zenginleşme yok.');
+    if(mode!=='tenor'&&isNum(t)&&t<0)W.push('Hesaplanan artık tenörü negatif: konsantredeki '+(ad||'bileşen')+' miktarı beslemedekinden fazla görünüyor; değerleri kontrol edin.');
+    if(isNum(Rr)&&Rr>100.0001)W.push('Verim % 100’ü aşıyor; girilen değerleri kontrol edin.');
+    var rC=R('C',mode==='verim'?'Üretilecek konsantre miktarı':'Konsantre miktarı',C,tb,2),
+        rT=R('T','Artık miktarı',T,tb,2),
+        rt=R('t','Artık tenörü',t,gb,3),
+        rR=R('R','Verim',Rr,'%',2,{note:'konsantreye alınan '+(ad||'bileşen')+' payı'}),
+        rZ=R('Z','Zenginleştirme oranı',Z,'t/t',2,{note:'besleme / konsantre miktarı'}),
+        results;
+    if(mode==='verim'){rC.primary=true;rt.primary=true;results=[rC,rt,rT,rZ];}
+    else if(mode==='urun'){rR.primary=true;rt.primary=true;results=[rR,rt,rT,rZ];}
+    else{rR.primary=true;rZ.primary=true;results=[rR,rZ,rC,rT];}
+    var tables=[];
+    if(isNum(F)&&isNum(C)&&isNum(T)&&isNum(t)&&isNum(f)&&isNum(c)){
+      var mu=metalUnit(b,tb),mF=metalAmount(F,f,b),mC=metalAmount(C,c,b),mT=metalAmount(T,t,b);
+      tables.push({title:(ad||'Metal')+' dengesi',head:['Akış','Miktar ('+tb+')','Tenör ('+gb+')',(ad||'Metal')+' ('+mu+')','Dağılım (%)'],rows:[
+        ['Beslenen cevher',{v:F,d:2},{v:f,d:2},{v:mF,d:3},{v:100,d:1}],
+        ['Konsantre',{v:C,d:2},{v:c,d:2},{v:mC,d:3},{v:mF?mC/mF*100:null,d:2}],
+        ['Artık',{v:T,d:2},{v:t,d:3},{v:mT,d:3},{v:mF?mT/mF*100:null,d:2}]]});
+    }
+    return {results:results,tables:tables,warnings:W};
+  },
+  formulas:function(mode){
+    var h='<p>Semboller: <var>F</var> beslenen cevher, <var>C</var> konsantre, <var>T</var> artık miktarı; <var>f</var>, <var>c</var>, <var>t</var> bunların tenörleri; <var>R</var> verim (%); <var>Z</var> zenginleştirme oranı (F / C).</p>';
+    if(mode==='verim'){
+      h+='<div class="eq">Z = c / (f · R / 100) = F / C</div>'+
+         '<div class="eq">C = F / Z,   T = F − C</div>'+
+         '<div class="eq">t = (F · f − C · c) / T</div>';
+    }else if(mode==='urun'){
+      h+='<div class="eq">T = F − C</div>'+
+         '<div class="eq">t = (F · f − C · c) / T</div>'+
+         '<div class="eq">R = C · c / (F · f) × 100</div>'+
+         '<div class="eq">Z = F / C = c / (f · R / 100)</div>';
+    }else{
+      h+='<div class="eq">R = c (f − t) / [f (c − t)] × 100</div>'+
+         '<div class="eq">Z = (c − t) / (f − t) = c / (f · R / 100)</div>'+
+         '<div class="eq">F girilirse: C = F / Z,   T = F − C</div>';
+    }
+    h+='<p>Üç durum da aynı kütle ve bileşen dengesine dayanır (F = C + T ve F·f = C·c + T·t); hangi büyüklüklerin bilindiğine göre denklemler çözülür. Buradaki zenginleştirme oranı besleme miktarının konsantre miktarına oranıdır (t/t) ve İki Ürünlü Denge modülündeki konsantrasyon oranı K ile aynı büyüklüktür.</p>';
+    return h;
+  },
+  notes:function(){
+    var ex=[['Verim',['1000','6','83,74','46,57','2,29','65','11,94'],[2,4,6]],
+      ['Ürünler',['420','4,12','16','46,57','2,44','43,06','26,25'],[4,5,6]],
+      ['Ürünler',['200','6','12','46','3,45','46,00','16,67'],[4,5,6]],
+      ['Ürünler',['550','4,16','13,5','47,38','3,07','27,96','40,74'],[4,5,6]],
+      ['Ürünler',['380','4,16','15','47,38','2,38','44,96','25,33'],[4,5,6]],
+      ['Tenör',['—','6','—','46','3','53,49','14,33'],[5,6]],
+      ['Tenör',['—','6,5','—','46','3','57,60','12,29'],[5,6]]];
+    var en=settings.decimal!=='tr';
+    return '<p>Örnek değerler VERİM HESAP tablosundan alınmıştır (krom cevheri, % Cr₂O₃). Tablodaki tüm örnekler ve sonuçları; <em>eğik</em> yazılanlar hesaplanan değerlerdir:</p>'+
+      '<div class="table-wrap"><table><tr><th>Durum</th><th>F (t)</th><th>f</th><th>C (t)</th><th>c</th><th>t</th><th>R (%)</th><th>Z</th></tr>'+
+      ex.map(function(r){return '<tr><td>'+r[0]+'</td>'+r[1].map(function(x,i){x=en?x.replace(',','.'):x;return r[2].indexOf(i)>=0?'<td><em>'+x+'</em></td>':'<td>'+x+'</td>';}).join('')+'</tr>';}).join('')+'</table></div>';
+  }
+});
 
 /* ================= 1. İki Ürünlü Denge ================= */
 var MINERALS=[
@@ -927,6 +1035,7 @@ register({
 
 /* ---------- home ---------- */
 var SHORT={
+  'verim-hesap':'Verim, ürünler veya yalnızca tenörler belli iken konsantre, artık, verim ve zenginleştirme oranı',
   'iki-urun':'f, c, t tenörlerinden randıman, ağırlık verimi, konsantrasyon ve zenginleşme oranı',
   'uc-urun':'Pb-Zn tipi iki konsantreli devrede ağırlık randımanları ve metal dağılımı',
   'metal-dagilimi':'Çok akışlı tonaj–tenör tablosundan metal dağılımı ve denge kapanması',

@@ -1,5 +1,5 @@
 /* Cevher Hesap Aracı – çevrimdışı önbellek. VERSION her yayında build-site.sh tarafından güncellenir. */
-var VERSION='20261109-2057';
+var VERSION='20261109-2213';
 var CACHE='cevher-hesap-'+VERSION;
 var CORE=['./','./index.html','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png','./icon-maskable-512.png'];
 self.addEventListener('install',function(e){
