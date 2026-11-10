@@ -1,6 +1,6 @@
 # Cevher Hesap Aracı
 
-Cevher hazırlama tesisi hesapları için tek dosyalık web uygulaması: verim hesabı (verim, ürünler veya yalnızca tenörler belli iken), iki ve üç ürünlü denge, metal dağılımı, pülp, devreden yük, Bond enerji, elek verimi, tonaj ve nem.
+Cevher hazırlama tesisi hesapları için tek dosyalık web uygulaması: verim hesabı (verim, ürünler veya yalnızca tenörler belli iken), pülp, devreden yük, Bond enerji ve elek verimi.
 
 - Canlı adres: https://aistudiomert-ui.github.io/cevher-hesap/
 - Telefonda veya bilgisayarda "Ana ekrana ekle / Uygulamayı yükle" ile kurulur, ilk açılıştan sonra çevrimdışı çalışır.

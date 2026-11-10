@@ -173,7 +173,7 @@ details[open].formulas summary::after{content:"−"}
 </style>
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFFFF">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1B1F25">
-<meta name="description" content="Cevher hazırlama tesisi hesapları: randıman, tenör, metal dengesi, pülp, devreden yük, öğütme enerjisi, eleme, kapasite.">
+<meta name="description" content="Cevher hazırlama tesisi hesapları: verim ve zenginleştirme oranı, pülp, devreden yük, öğütme enerjisi, eleme verimi.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -253,10 +253,9 @@ function toast(msg){var t=$('toast');t.textContent=msg;t.classList.add('show');c
 
 /* ---------- module registry ---------- */
 var GROUPS=[
-  {id:'denge',title:'Denge ve Verim',desc:'Tenör ve tonajdan randıman, ürün dağılımı ve denge kontrolü'},
+  {id:'denge',title:'Denge ve Verim',desc:'Tenör ve miktarlardan verim, artık ve zenginleştirme oranı'},
   {id:'pulp',title:'Pülp ve Su',desc:'Katı oranı, yoğunluk, su ihtiyacı ve devreden yük'},
-  {id:'komin',title:'Kırma, Öğütme, Eleme',desc:'Enerji ihtiyacı ve eleme performansı'},
-  {id:'isletme',title:'İşletme',desc:'Kapasite ve nem dönüşümleri'}
+  {id:'komin',title:'Kırma, Öğütme, Eleme',desc:'Enerji ihtiyacı ve eleme performansı'}
 ];
 var MODULES=[];
 function register(m){MODULES.push(m);}
@@ -438,15 +437,10 @@ function copyText(txt){
 /* ---------- icons ---------- */
 function icon(paths){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+paths+'</svg>';}
 var ICONS={
-  funnel:icon('<path d="M3 5h18l-7 8v6l-4 2v-8L3 5z"/>'),
-  split:icon('<path d="M12 3v15M12 10l-7 7M12 10l7 7"/>'),
-  bars:icon('<path d="M4 20v-9M10 20V5M16 20v-7M2 20h20"/>'),
   drop:icon('<path d="M12 3c3.5 4.2 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 2.5-6.8 6-11z"/>'),
   loop:icon('<path d="M20 12a8 8 0 0 1-14.6 4.5M4 12a8 8 0 0 1 14.6-4.5M4 17v-4h4M20 7v4h-4"/>'),
   bolt:icon('<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/>'),
   mesh:icon('<path d="M4 4h16v16H4zM4 10h16M4 14h16M10 4v16M14 4v16"/>'),
-  flask:icon('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/>'),
-  scale:icon('<path d="M12 3v18M8 21h8M4 7h16M6 7l-3 7a3 3 0 0 0 6 0L6 7zM18 7l-3 7a3 3 0 0 0 6 0l-3-7"/>'),
   percent:icon('<path d="M19 5 5 19"/><circle cx="7.5" cy="7.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/>')
 };
 var BIRIM_OPTS=[{value:'%',label:'% (yüzde)'},{value:'g/t',label:'g/t'},{value:'ppm',label:'ppm'}];
@@ -454,7 +448,7 @@ var TBIRIM_OPTS=[{value:'t/sa',label:'t/saat'},{value:'t/gün',label:'t/gün'},{
 function metalUnit(b,tb){return b==='%'?tb:tb.replace(/^t/,'kg');}
 function metalAmount(ton,grade,b){return b==='%'?ton*grade/100:ton*grade/1000;}
 
-/* ================= 0. Verim Hesabı (VERİM HESAP tablosu) ================= */
+/* ================= 1. Verim Hesabı (VERİM HESAP tablosu) ================= */
 register({
   id:'verim-hesap',group:'denge',title:'Verim Hesabı',icon:ICONS.percent,
   desc:'VERİM HESAP tablosundaki üç durum: verim belli ise konsantre ve artık miktarı; ürünler belli ise verim; sadece tenörler belli ise verim ve zenginleştirme oranı.',
@@ -543,7 +537,7 @@ register({
          '<div class="eq">Z = (c − t) / (f − t) = c / (f · R / 100)</div>'+
          '<div class="eq">F girilirse: C = F / Z,   T = F − C</div>';
     }
-    h+='<p>Üç durum da aynı kütle ve bileşen dengesine dayanır (F = C + T ve F·f = C·c + T·t); hangi büyüklüklerin bilindiğine göre denklemler çözülür. Buradaki zenginleştirme oranı besleme miktarının konsantre miktarına oranıdır (t/t) ve İki Ürünlü Denge modülündeki konsantrasyon oranı K ile aynı büyüklüktür.</p>';
+    h+='<p>Üç durum da aynı kütle ve bileşen dengesine dayanır (F = C + T ve F·f = C·c + T·t); hangi büyüklüklerin bilindiğine göre denklemler çözülür. Buradaki zenginleştirme oranı besleme miktarının konsantre miktarına oranıdır (t/t); literatürde konsantrasyon oranı (K = F / C) olarak da geçer. Tenörün kaç kat arttığını gösteren c / f oranı bundan farklıdır.</p>';
     return h;
   },
   notes:function(){
@@ -561,223 +555,7 @@ register({
   }
 });
 
-/* ================= 1. İki Ürünlü Denge ================= */
-var MINERALS=[
-  {value:'',label:'Seçilmedi'},
-  {value:'34.6',label:'Kalkopirit – 34,6 % Cu'},
-  {value:'79.9',label:'Kalkosin – 79,9 % Cu'},
-  {value:'63.3',label:'Bornit – 63,3 % Cu'},
-  {value:'86.6',label:'Galen – 86,6 % Pb'},
-  {value:'67.1',label:'Sfalerit – 67,1 % Zn'},
-  {value:'72.4',label:'Manyetit – 72,4 % Fe'},
-  {value:'69.9',label:'Hematit – 69,9 % Fe'},
-  {value:'67.9',label:'Kromit – 67,9 % Cr₂O₃'},
-  {value:'59.9',label:'Molibdenit – 59,9 % Mo'},
-  {value:'78.8',label:'Kasiterit – 78,8 % Sn'},
-  {value:'80.5',label:'Şelit – 80,5 % WO₃'},
-  {value:'42.2',label:'Fluorapatit – 42,2 % P₂O₅'},
-  {value:'100',label:'Saf metal / mineral – 100 %'},
-  {value:'ozel',label:'Özel değer gir'}
-];
-register({
-  id:'iki-urun',group:'denge',title:'İki Ürünlü Denge',icon:ICONS.funnel,
-  desc:'Besleme, konsantre ve artık tenöründen ağırlık ve metal randımanı, konsantrasyon ve zenginleşme oranı; tonaj girilirse ürün tonajları ve metal dengesi.',
-  modes:[{id:'tenor',label:'Tenörlerden'},{id:'tonaj',label:'Tonaj ve tenörden'}],
-  inputs:function(mode,v){
-    var b=v.birim||'%',tb=v.tbirim||'t/sa';
-    var defs=[
-      {key:'birim',type:'select',label:'Tenör birimi',options:BIRIM_OPTS,default:'%',affects:true},
-      {key:'tbirim',type:'select',label:'Tonaj birimi',options:TBIRIM_OPTS,default:'t/sa',affects:true}
-    ];
-    if(mode==='tenor'){
-      defs.push({key:'f',type:'number',label:'Besleme tenörü (f)',unit:b,example:'1.0'},
-        {key:'c',type:'number',label:'Konsantre tenörü (c)',unit:b,example:'25'},
-        {key:'t',type:'number',label:'Artık tenörü (t)',unit:b,example:'0.1'},
-        {key:'F',type:'number',label:'Besleme tonajı (F)',unit:tb,optional:true,example:'200',hint:'Girilirse ürün tonajları ve metal dengesi tablosu hesaplanır.'});
-    }else{
-      defs.push({key:'F',type:'number',label:'Besleme tonajı (F)',unit:tb,example:'200'},
-        {key:'C',type:'number',label:'Konsantre tonajı (C)',unit:tb,example:'7.23'},
-        {key:'f',type:'number',label:'Besleme tenörü (f)',unit:b,example:'1.0'},
-        {key:'c',type:'number',label:'Konsantre tenörü (c)',unit:b,example:'25'});
-    }
-    defs.push({key:'mineral',type:'select',label:'Ayırma verimi için mineral',options:MINERALS,default:'',affects:true,full:true,optional:true,hint:'Schulz ayırma verimi için saf mineralin metal içeriği (m) kullanılır.'},
-      {key:'m',type:'number',label:'Saf mineral metal içeriği (m)',unit:'%',hidden:v.mineral!=='ozel'});
-    return defs;
-  },
-  compute:function(v,mode){
-    var b=v.birim,tb=v.tbirim,W=[];
-    var f=v.f,c=v.c,t=v.t,F=v.F,C=v.C,T=null,Y=null,Rr=null,K=null,Z=null;
-    if(mode==='tenor'){
-      if(!isNum(f)||!isNum(c)||!isNum(t))return {empty:'Sonuçlar için besleme, konsantre ve artık tenörlerini girin.'};
-      if(c===t){W.push('Konsantre ve artık tenörü eşit olamaz (c = t); ağırlık randımanı tanımsız.');return {warnings:W};}
-      Y=(f-t)/(c-t)*100;K=(c-t)/(f-t);Z=f?c/f:null;Rr=f?Y*c/f:null;
-      if(isNum(F)){C=F*Y/100;T=F-C;}
-    }else{
-      if(!isNum(F)||!isNum(C)||!isNum(f)||!isNum(c))return {empty:'Sonuçlar için besleme ve konsantre tonajları ile tenörlerini girin.'};
-      if(F<=0||C<=0)W.push('Tonajlar sıfırdan büyük olmalı.');
-      if(C>=F)W.push('Konsantre tonajı besleme tonajından küçük olmalı (C < F).');
-      T=F-C;Y=F?C/F*100:null;Rr=(F*f)?C*c/(F*f)*100:null;t=T?(F*f-C*c)/T:null;K=C?F/C:null;Z=f?c/f:null;
-      if(isNum(t)&&t<0)W.push('Hesaplanan artık tenörü negatif: konsantredeki metal beslemedekinden fazla görünüyor; tonaj veya tenörleri kontrol edin.');
-    }
-    if(!(f>0))W.push('Besleme tenörü sıfırdan büyük olmalı.');
-    if(isNum(c)&&isNum(f)&&c<f)W.push('Konsantre tenörü besleme tenöründen düşük; zenginleşme yok.');
-    if(mode==='tenor'&&isNum(Y)&&(Y<0||Y>100))W.push('Tenörler tutarsız: besleme tenörü artık ile konsantre arasında olmalı (t < f < c).');
-    if(isNum(Rr)&&Rr>100.0001)W.push('Metal randımanı % 100’ü aşıyor; girilen değerleri kontrol edin.');
-    var m=null;if(v.mineral==='ozel')m=v.m;else if(v.mineral)m=parseFloat(v.mineral);
-    var SE=null,Rg=null;
-    if(isNum(m)&&m>0&&isNum(Y)&&isNum(Rr)){
-      var mU=(b==='%')?m:m*10000;
-      if(mU<=c)W.push('Konsantre tenörü saf mineral içeriğini aşamaz; ayırma verimi hesaplanmadı.');
-      else if(mU>f){Rg=Y*(mU-c)/(mU-f);SE=Rr-Rg;}
-    }
-    var results=[
-      R('R','Metal randımanı (R)',Rr,'%',2,{primary:true}),
-      R('Y','Ağırlık randımanı (Y)',Y,'%',2,{primary:true,note:'kütle verimi, C / F'}),
-      R('K','Konsantrasyon oranı (K)',K,'',2,{note:'F / C'}),
-      R('Z','Zenginleşme oranı (Z)',Z,'',2,{note:'c / f'})
-    ];
-    if(mode==='tonaj')results.push(R('t','Hesaplanan artık tenörü (t)',t,b,3));
-    results.push(R('kayip','Artığa kaçan metal',isNum(Rr)?100-Rr:null,'%',2));
-    if(isNum(C)&&isNum(T))results.push(R('C','Konsantre tonajı (C)',C,tb,2),R('T','Artık tonajı (T)',T,tb,2));
-    if(isNum(SE))results.push(R('SE','Ayırma verimi (Schulz)',SE,'%',2,{note:'R − gang randımanı'}),R('Rg','Gang randımanı (Rg)',Rg,'%',2,{note:'gangın konsantreye kaçışı'}));
-    var tables=[];
-    if(isNum(F)&&isNum(C)&&isNum(T)&&isNum(t)&&isNum(f)&&isNum(c)){
-      var mu=metalUnit(b,tb),mF=metalAmount(F,f,b),mC=metalAmount(C,c,b),mT=metalAmount(T,t,b);
-      tables.push({title:'Metal dengesi',head:['Akış','Tonaj ('+tb+')','Tenör ('+b+')','Metal ('+mu+')','Dağılım (%)'],rows:[
-        ['Besleme',{v:F,d:2},{v:f,d:2},{v:mF,d:3},{v:100,d:1}],
-        ['Konsantre',{v:C,d:2},{v:c,d:2},{v:mC,d:3},{v:mF?mC/mF*100:null,d:2}],
-        ['Artık',{v:T,d:2},{v:t,d:2},{v:mT,d:3},{v:mF?mT/mF*100:null,d:2}]]});
-    }
-    return {results:results,tables:tables,warnings:W};
-  },
-  formulas:function(mode){
-    var h='<p>Semboller: <var>f</var> besleme, <var>c</var> konsantre, <var>t</var> artık tenörü; <var>F</var>, <var>C</var>, <var>T</var> tonajlar; <var>Y</var> ağırlık, <var>R</var> metal randımanı (%).</p>';
-    if(mode==='tenor'){
-      h+='<div class="eq">Y = (f − t) / (c − t) × 100</div>'+
-         '<div class="eq">R = (c / f) × Y = c (f − t) / [f (c − t)] × 100</div>'+
-         '<div class="eq">K = F / C = 100 / Y = (c − t) / (f − t)</div>'+
-         '<div class="eq">Z = c / f</div>'+
-         '<div class="eq">C = F · Y / 100,   T = F − C</div>';
-    }else{
-      h+='<div class="eq">Y = C / F × 100</div>'+
-         '<div class="eq">R = C · c / (F · f) × 100</div>'+
-         '<div class="eq">t = (F · f − C · c) / (F − C)</div>'+
-         '<div class="eq">K = F / C,   Z = c / f</div>';
-    }
-    h+='<div class="eq">Ayırma verimi (Schulz): AV = R − R<sub>g</sub>,   R<sub>g</sub> = Y (m − c) / (m − f)</div>'+
-       '<p>İki ürünlü formül kütle ve metal dengesinden türetilir; akışların kararlı durumda olduğunu ve analizlerin temsilî olduğunu varsayar. Ayırma verimi, metal randımanı ile gangın konsantreye kaçış oranının farkıdır; <var>m</var> saf mineralin metal içeriğidir (g/t tenörlerde m otomatik olarak g/t’ye çevrilir).</p>';
-    return h;
-  }
-});
-
-/* ================= 2. Üç Ürünlü Denge ================= */
-register({
-  id:'uc-urun',group:'denge',title:'Üç Ürünlü Denge',icon:ICONS.split,
-  desc:'İki konsantre ve artık üreten devrelerde (ör. Pb-Zn) her ürünün ağırlık randımanı ve her metalin ürünlere dağılımı.',
-  inputs:function(mode,v){
-    var b=v.birim||'%',tb=v.tbirim||'t/sa',m1=v.m1||'Metal 1',m2=v.m2||'Metal 2';
-    return [
-      {key:'m1',type:'text',label:'Metal 1 adı',placeholder:'Pb',default:'Pb',affects:true},
-      {key:'m2',type:'text',label:'Metal 2 adı',placeholder:'Zn',default:'Zn',affects:true},
-      {key:'birim',type:'select',label:'Tenör birimi',options:BIRIM_OPTS,default:'%',affects:true},
-      {key:'tbirim',type:'select',label:'Tonaj birimi',options:TBIRIM_OPTS,default:'t/sa',affects:true},
-      {key:'mx',type:'matrix',label:'Tenörler',rowLabels:['Besleme','Konsantre 1 ('+m1+')','Konsantre 2 ('+m2+')','Artık'],colLabels:[m1+' ('+b+')',m2+' ('+b+')'],
-        cells:[['f1','f2'],['c11','c12'],['c21','c22'],['t1','t2']],examples:{f1:'5',f2:'10',c11:'70',c12:'5',c21:'2',c22:'55',t1:'0.5',t2:'1'}},
-      {key:'F',type:'number',label:'Besleme tonajı (F)',unit:tb,optional:true,example:'100'}
-    ];
-  },
-  compute:function(v){
-    var b=v.birim,tb=v.tbirim,m1=v.m1||'Metal 1',m2=v.m2||'Metal 2',W=[];
-    var need=['f1','f2','c11','c12','c21','c22','t1','t2'];
-    for(var i=0;i<need.length;i++)if(!isNum(v[need[i]]))return {empty:'Sonuçlar için dört akışın iki metal tenörünü de girin.'};
-    var f1=v.f1,f2=v.f2,c11=v.c11,c12=v.c12,c21=v.c21,c22=v.c22,t1=v.t1,t2=v.t2;
-    var D=(c11-t1)*(c22-t2)-(c12-t2)*(c21-t1);
-    if(Math.abs(D)<1e-9){W.push('Denklem sistemi çözülemiyor: konsantre ve artık tenörleri birbirinden yeterince farklı değil.');return {warnings:W};}
-    var Y1=((f1-t1)*(c22-t2)-(f2-t2)*(c21-t1))/D*100;
-    var Y2=((f2-t2)*(c11-t1)-(f1-t1)*(c12-t2))/D*100;
-    var Yt=100-Y1-Y2;
-    if(!(f1>0)||!(f2>0))W.push('Besleme tenörleri sıfırdan büyük olmalı.');
-    if(Y1<0||Y1>100||Y2<0||Y2>100||Yt<0||Yt>100)W.push('Tenörler tutarsız: hesaplanan ağırlık randımanlarından biri 0–100 aralığının dışında.');
-    var rec=function(Y,c,f){return f?Y*c/f:null;};
-    var R11=rec(Y1,c11,f1),R12=rec(Y1,c12,f2),R21=rec(Y2,c21,f1),R22=rec(Y2,c22,f2),Rt1=rec(Yt,t1,f1),Rt2=rec(Yt,t2,f2);
-    if((isNum(R11)&&R11>100.0001)||(isNum(R22)&&R22>100.0001))W.push('Bir metalin randımanı % 100’ü aşıyor; tenörleri kontrol edin.');
-    var F=v.F,hasF=isNum(F);
-    var results=[
-      R('R11',m1+' randımanı, Konsantre 1',R11,'%',2,{primary:true}),
-      R('R22',m2+' randımanı, Konsantre 2',R22,'%',2,{primary:true}),
-      R('Y1','Konsantre 1 ağırlık randımanı',Y1,'%',2),
-      R('Y2','Konsantre 2 ağırlık randımanı',Y2,'%',2),
-      R('Yt','Artık ağırlık oranı',Yt,'%',2),
-      R('R12',m2+' kaybı, Konsantre 1’e',R12,'%',2),
-      R('R21',m1+' kaybı, Konsantre 2’ye',R21,'%',2),
-      R('K1','Konsantrasyon oranı, Konsantre 1',Y1?100/Y1:null,'',2),
-      R('K2','Konsantrasyon oranı, Konsantre 2',Y2?100/Y2:null,'',2)
-    ];
-    if(hasF)results.push(R('C1','Konsantre 1 tonajı',F*Y1/100,tb,2),R('C2','Konsantre 2 tonajı',F*Y2/100,tb,2),R('T','Artık tonajı',F*Yt/100,tb,2));
-    var head=['Akış','Ağırlık (%)',m1+' dağılımı (%)',m2+' dağılımı (%)'];if(hasF)head.splice(1,0,'Tonaj ('+tb+')');
-    var row=function(name,Y,r1,r2){var r=[name];if(hasF)r.push({v:F*Y/100,d:2});r.push({v:Y,d:2},{v:r1,d:2},{v:r2,d:2});return r;};
-    var sum=function(a,b2,c){return (a||0)+(b2||0)+(c||0);};
-    var tables=[{title:'Dağılım tablosu',head:head,rows:[
-      row('Konsantre 1 ('+m1+')',Y1,R11,R12),row('Konsantre 2 ('+m2+')',Y2,R21,R22),row('Artık',Yt,Rt1,Rt2),row('Toplam',100,sum(R11,R21,Rt1),sum(R12,R22,Rt2))]}];
-    return {results:results,tables:tables,warnings:W};
-  },
-  formulas:function(){
-    return '<p>Alt simgelerde ilk rakam ürünü (1: konsantre 1, 2: konsantre 2), ikinci rakam metali gösterir; <var>f</var> besleme, <var>t</var> artık tenörü.</p>'+
-      '<div class="eq">D = (c₁₁ − t₁)(c₂₂ − t₂) − (c₁₂ − t₂)(c₂₁ − t₁)</div>'+
-      '<div class="eq">Y₁ = [(f₁ − t₁)(c₂₂ − t₂) − (f₂ − t₂)(c₂₁ − t₁)] / D × 100</div>'+
-      '<div class="eq">Y₂ = [(f₂ − t₂)(c₁₁ − t₁) − (f₁ − t₁)(c₁₂ − t₂)] / D × 100</div>'+
-      '<div class="eq">Y<sub>artık</sub> = 100 − Y₁ − Y₂</div>'+
-      '<div class="eq">R(metal i → ürün j) = Y<sub>j</sub> · c<sub>ji</sub> / f<sub>i</sub></div>'+
-      '<p>Dört akış için kütle dengesi ve iki metal dengesi yazılır; iki bilinmeyenli (Y₁, Y₂) sistem çözülür. Çözüm dengeyi tam kapatır; analiz hatası varsa kendini 0–100 dışına çıkan ağırlık randımanlarıyla gösterir.</p>';
-  }
-});
-
-/* ================= 3. Metal Dağılımı Tablosu ================= */
-register({
-  id:'metal-dagilimi',group:'denge',title:'Metal Dağılımı Tablosu',icon:ICONS.bars,
-  desc:'Birden çok ürün akışının tonaj ve tenöründen metal miktarı, dağılım yüzdesi ve hesaplanan besleme tenörü; ölçülen beslemeyle kapanma kontrolü.',
-  inputs:function(mode,v){
-    var b=v.birim||'%',tb=v.tbirim||'t/sa';
-    return [
-      {key:'birim',type:'select',label:'Tenör birimi',options:BIRIM_OPTS,default:'%',affects:true},
-      {key:'tbirim',type:'select',label:'Tonaj birimi',options:TBIRIM_OPTS,default:'t/sa',affects:true},
-      {key:'akislar',type:'rows',label:'Ürün akışları',addLabel:'Akış ekle',minRows:1,
-        columns:[{key:'ad',type:'text',label:'Akış adı',placeholder:'Konsantre'},{key:'ton',type:'number',label:'Tonaj',unit:tb},{key:'tenor',type:'number',label:'Tenör',unit:b}],
-        exampleRows:[{ad:'Konsantre',ton:'6',tenor:'25'},{ad:'Ara ürün',ton:'10',tenor:'2.5'},{ad:'Artık',ton:'184',tenor:'0.136'}]},
-      {key:'Fo',type:'number',label:'Ölçülen besleme tonajı',unit:tb,optional:true,example:'200'},
-      {key:'fo',type:'number',label:'Ölçülen besleme tenörü',unit:b,optional:true,example:'1.0'}
-    ];
-  },
-  compute:function(v){
-    var b=v.birim,tb=v.tbirim,W=[],rows=v.akislar||[];
-    var ok=rows.filter(function(r){return isNum(r.ton)&&isNum(r.tenor);});
-    if(!ok.length)return {empty:'En az bir akış için tonaj ve tenör girin.'};
-    if(rows.length-ok.length>0)W.push((rows.length-ok.length)+' satır eksik veri nedeniyle hesaba katılmadı.');
-    var mu=metalUnit(b,tb),ST=0,SM=0;
-    var calc=ok.map(function(r){var m=metalAmount(r.ton,r.tenor,b);ST+=r.ton;SM+=m;return {ad:r.ad||'Akış',ton:r.ton,tenor:r.tenor,m:m};});
-    var fcalc=ST?SM/ST*(b==='%'?100:1000):null;
-    var results=[R('f','Hesaplanan besleme tenörü',fcalc,b,3,{primary:true}),R('ST','Toplam tonaj',ST,tb,2,{primary:true}),R('SM','Toplam metal',SM,mu,3)];
-    var Fo=v.Fo,fo=v.fo;
-    if(isNum(Fo)&&Fo>0)results.push(R('eT','Tonaj kapanma farkı',(ST-Fo)/Fo*100,'%',2,{note:'(Σ ürün − ölçülen besleme) / besleme'}));
-    if(isNum(Fo)&&isNum(fo)&&Fo>0&&fo>0){
-      var mF=metalAmount(Fo,fo,b),eM=(SM-mF)/mF*100;
-      results.push(R('eM','Metal kapanma farkı',eM,'%',2),R('df','Tenör farkı (hesaplanan − ölçülen)',isNum(fcalc)?fcalc-fo:null,b,3));
-      if(Math.abs(eM)>5)W.push('Metal dengesi % 5’ten fazla açık; tonaj veya analizlerden biri hatalı olabilir.');
-    }
-    var trs=calc.map(function(r){return [r.ad,{v:r.ton,d:2},{v:ST?r.ton/ST*100:null,d:2},{v:r.tenor,d:3},{v:r.m,d:3},{v:SM?r.m/SM*100:null,d:2}];});
-    trs.push(['Toplam (hesaplanan besleme)',{v:ST,d:2},{v:100,d:1},{v:fcalc,d:3},{v:SM,d:3},{v:100,d:1}]);
-    return {results:results,tables:[{title:'Dağılım',head:['Akış','Tonaj ('+tb+')','Kütle (%)','Tenör ('+b+')','Metal ('+mu+')','Dağılım (%)'],rows:trs}],warnings:W};
-  },
-  formulas:function(){
-    return '<div class="eq">Metal<sub>i</sub> = tonaj<sub>i</sub> × tenör<sub>i</sub> / 100   (% tenör → t metal;  g/t tenör → /1000 → kg metal)</div>'+
-      '<div class="eq">Dağılım<sub>i</sub> (%) = metal<sub>i</sub> / Σ metal × 100</div>'+
-      '<div class="eq">Hesaplanan besleme tenörü = Σ (tonaj × tenör) / Σ tonaj</div>'+
-      '<div class="eq">Kapanma farkı (%) = (Σ ürün − ölçülen besleme) / ölçülen besleme × 100</div>'+
-      '<p>Ürünlerin toplamı beslemeyi vermelidir. Tonaj ve metal kapanma farkları örnekleme, tartım veya analiz hatalarının büyüklüğünü gösterir; vardiya raporlarında metal farkı için % ±5 yaygın bir kabul sınırıdır.</p>';
-  }
-});
-
-/* ================= 4. Pülp Hesapları ================= */
+/* ================= 2. Pülp Hesapları ================= */
 register({
   id:'pulp',group:'pulp',title:'Pülp Hesapları',icon:ICONS.drop,
   desc:'Katı oranı, pülp yoğunluğu, hacimce katı ve seyreltme oranı; katı debisi girilirse su ve pülp debileri, hedef katı oranı için su ihtiyacı.',
@@ -842,7 +620,7 @@ register({
   }
 });
 
-/* ================= 5. Devreden Yük ================= */
+/* ================= 3. Devreden Yük ================= */
 register({
   id:'devreden-yuk',group:'pulp',title:'Devreden Yük',icon:ICONS.loop,
   desc:'Kapalı öğütme devresinde siklon besleme, üst akım ve alt akım verilerinden devreden yük yüzdesi ve değirmen beslemesi.',
@@ -898,7 +676,7 @@ register({
   }
 });
 
-/* ================= 6. Bond Enerji ================= */
+/* ================= 4. Bond Enerji ================= */
 register({
   id:'bond',group:'komin',title:'Bond Enerji',icon:ICONS.bolt,
   desc:'Bond iş indeksi ile öğütme enerjisi ve değirmen gücü; mevcut güçten ulaşılabilir ürün inceliği.',
@@ -949,7 +727,7 @@ register({
   }
 });
 
-/* ================= 7. Elek Verimi ================= */
+/* ================= 5. Elek Verimi ================= */
 register({
   id:'elek',group:'komin',title:'Elek Verimi',icon:ICONS.mesh,
   desc:'Besleme, elek üstü ve elek altı akımlarındaki ince tane oranından kütle dağılımı, elek altı verimi ve elek üstü verimi.',
@@ -992,58 +770,13 @@ register({
   }
 });
 
-/* ================= 8. Tonaj ve Nem ================= */
-register({
-  id:'tonaj',group:'isletme',title:'Tonaj ve Nem',icon:ICONS.scale,
-  desc:'Yaş tonajdan kuru tonaj ve su miktarı; yıllık üretim hedefinden saatlik tasarım kapasitesi.',
-  inputs:function(){
-    return [
-      {key:'h1',type:'heading',label:'Nem dönüşümü'},
-      {key:'yas',type:'number',label:'Yaş tonaj',unit:'t',example:'1000'},
-      {key:'nem',type:'number',label:'Nem (yaş baz)',unit:'%',example:'8'},
-      {key:'h2',type:'heading',label:'Kapasite'},
-      {key:'yillik',type:'number',label:'Yıllık tonaj (kuru)',unit:'t/yıl',example:'1500000'},
-      {key:'gun',type:'number',label:'Çalışma günü',unit:'gün/yıl',default:'365'},
-      {key:'saat',type:'number',label:'Çalışma saati',unit:'sa/gün',default:'24'},
-      {key:'kull',type:'number',label:'Kullanılabilirlik',unit:'%',default:'92'}
-    ];
-  },
-  compute:function(v){
-    var W=[],results=[],any=false,yas=v.yas,nem=v.nem;
-    if(isNum(yas)&&isNum(nem)){
-      any=true;
-      if(nem<0||nem>=100)W.push('Nem 0 ile 100 arasında olmalı.');
-      else{var kuru=yas*(1-nem/100);results.push(R('kuru','Kuru tonaj',kuru,'t',2,{primary:true}),R('su','Su miktarı',yas-kuru,'t',2),R('nemk','Kuru bazda nem',nem/(100-nem)*100,'%',2,{note:'su / kuru katı'}));}
-    }
-    var yillik=v.yillik,gun=v.gun,saat=v.saat,kull=v.kull;
-    if(isNum(yillik)&&isNum(gun)&&isNum(saat)&&isNum(kull)){
-      any=true;var hrs=gun*saat*kull/100;
-      if(hrs<=0)W.push('Çalışma saati toplamı sıfırdan büyük olmalı.');
-      else results.push(R('tph','Tasarım kapasitesi',yillik/hrs,'t/sa',1,{primary:true}),R('tpd','Günlük ortalama',gun?yillik/gun:null,'t/gün',0),R('hrs','Yıllık çalışma saati',hrs,'sa/yıl',0));
-    }
-    if(!any)return {empty:'Yaş tonaj ve nem, ya da yıllık tonaj ve çalışma süresi bilgilerini girin.'};
-    return {results:results,warnings:W};
-  },
-  formulas:function(){
-    return '<div class="eq">Kuru tonaj = yaş tonaj × (100 − nem) / 100</div>'+
-      '<div class="eq">Kuru bazda nem (%) = su / kuru katı × 100 = nem / (100 − nem) × 100</div>'+
-      '<div class="eq">Yıllık çalışma saati = gün/yıl × sa/gün × kullanılabilirlik / 100</div>'+
-      '<div class="eq">Tasarım kapasitesi (t/sa) = yıllık tonaj / yıllık çalışma saati</div>'+
-      '<p>Nem yaş baz üzerinden (su / yaş kütle) girilir; laboratuvar nem analizleri genellikle bu şekildedir. Kullanılabilirlik, planlı ve plansız duruşlar düşüldükten sonra kalan çalışma zamanı oranıdır.</p>';
-  }
-});
-
 /* ---------- home ---------- */
 var SHORT={
   'verim-hesap':'Verim, ürünler veya yalnızca tenörler belli iken konsantre, artık, verim ve zenginleştirme oranı',
-  'iki-urun':'f, c, t tenörlerinden randıman, ağırlık verimi, konsantrasyon ve zenginleşme oranı',
-  'uc-urun':'Pb-Zn tipi iki konsantreli devrede ağırlık randımanları ve metal dağılımı',
-  'metal-dagilimi':'Çok akışlı tonaj–tenör tablosundan metal dağılımı ve denge kapanması',
   'pulp':'Katı oranı, pülp yoğunluğu, seyreltme oranı, su ve pülp debileri',
   'devreden-yuk':'Katı oranı, tane boyu veya tonajdan devreden yük ve değirmen beslemesi',
   'bond':'Wi, F80, P80 ile kWh/t ve değirmen gücü; güçten ulaşılabilir P80',
-  'elek':'Elek altı ve elek üstü verimleri, kütle dağılımı',
-  'tonaj':'Yaş–kuru tonaj dönüşümü ve yıllık hedeften saatlik kapasite'
+  'elek':'Elek altı ve elek üstü verimleri, kütle dağılımı'
 };
 function renderHome(){
   current=null;lastResult=null;

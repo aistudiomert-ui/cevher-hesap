@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Cevher Hesap Aracı",
   "short_name": "Cevher Hesap",
-  "description": "Cevher hazırlama tesisi hesapları: randıman, tenör, metal dengesi, pülp, devreden yük, öğütme enerjisi, eleme, kapasite.",
+  "description": "Cevher hazırlama tesisi hesapları: verim ve zenginleştirme oranı, pülp, devreden yük, öğütme enerjisi, eleme verimi.",
   "lang": "tr",
   "start_url": "./",
   "scope": "./",
